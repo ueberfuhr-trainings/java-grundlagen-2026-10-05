@@ -249,29 +249,6 @@ def create_snapshot_from_commit(commit, destination):
 
 
 # ============================================================
-# Bootstrap
-# ============================================================
-
-def copy_bootstrap():
-  """
-  Bootstrap is downloaded by pages.yml.
-
-  Keeping it locally in the generated Pages site means learners
-  do not need access to jsdelivr.net or another external CDN.
-  """
-
-  if not BOOTSTRAP_CSS.exists():
-    raise RuntimeError(
-      f"Bootstrap CSS not found: {BOOTSTRAP_CSS}"
-    )
-
-  if not BOOTSTRAP_JS.exists():
-    raise RuntimeError(
-      f"Bootstrap JS not found: {BOOTSTRAP_JS}"
-    )
-
-
-# ============================================================
 # URL handling
 # ============================================================
 
@@ -1892,7 +1869,6 @@ def main():
   print()
 
   clean_site()
-  copy_bootstrap()
 
   main_commit = get_main_commit()
 
