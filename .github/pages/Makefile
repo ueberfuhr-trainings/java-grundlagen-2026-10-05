@@ -1,0 +1,2 @@
+preview:
+	python preview.py

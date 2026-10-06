@@ -1,4 +1,4 @@
-name: Publish Java project to GitHub Pages
+name: Publish Pages
 
 on:
   push:
@@ -10,33 +10,28 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  pull-requests: read
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pygments markdown
 
-      - name: Get merged pull requests
+      - name: Get merged PR metadata
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -47,68 +42,37 @@ jobs:
             > "$RUNNER_TEMP/merged-prs.json"
 
       - name: Validate generator
-        run: |
-          python -m py_compile .github/pages/generate.py
+        run: python -m py_compile .github/pages/generate.py
 
-      - name: Generate Pages site
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          RUNNER_TEMP: ${{ runner.temp }}
-        run: |
-          python .github/pages/generate.py
+      - name: Generate site
+        run: python .github/pages/generate.py --with-prs
 
       - name: Download Bootstrap
         run: |
           mkdir -p _site/assets
-
-          curl -fL \
+          curl --fail --location \
             https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css \
-            -o _site/assets/bootstrap.min.css
-
-          curl -fL \
+            --output _site/assets/bootstrap.min.css
+          curl --fail --location \
             https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js \
-            -o _site/assets/bootstrap.bundle.min.js
+            --output _site/assets/bootstrap.bundle.min.js
 
       - name: Verify generated site
         run: |
-          echo "=== _site directory ==="
+          test -f _site/index.html
+          test -f _site/style.css
+          test -f _site/site.js
+          test -f _site/assets/bootstrap.min.css
+          test -f _site/assets/bootstrap.bundle.min.js
+          test ! -f _site/merged-prs.json
+
+          echo "Generated files:"
           find _site -maxdepth 4 -type f | sort
-
-          echo
-          echo "=== Required files ==="
-
-          if [ ! -d "_site" ]; then
-            echo "ERROR: _site does not exist"
-            exit 1
-          fi
-
-          if [ ! -f "_site/index.html" ]; then
-            echo "ERROR: _site/index.html does not exist"
-            exit 1
-          fi
-
-          if [ ! -f "_site/assets/bootstrap.min.css" ]; then
-            echo "ERROR: Bootstrap CSS does not exist"
-            exit 1
-          fi
-
-          if [ ! -f "_site/assets/bootstrap.bundle.min.js" ]; then
-            echo "ERROR: Bootstrap JS does not exist"
-            exit 1
-          fi
-
-          if [ -f "_site/merged-prs.json" ]; then
-            echo "ERROR: merged-prs.json must not be published"
-            exit 1
-          fi
-
-          echo
-          echo "=== Verification successful ==="
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Pages artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
@@ -117,9 +81,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
-
     needs: build
 
     steps:
