@@ -1784,10 +1784,20 @@ def generate_version(
   Generate one complete version of the project.
   """
 
-  version_directory = (
-    SITE
-    / Path(version_base_url.lstrip("/"))
-  )
+  if version_type == "main":
+    version_directory = SITE
+
+  elif version_type == "pr":
+    version_directory = (
+      SITE
+      / "pr"
+      / str(pr["number"])
+    )
+
+  else:
+    raise ValueError(
+      f"Unknown version type: {version_type}"
+    )
 
   # For URLs such as /repo/, Path gives repo.
   # For /repo/pr/17/, it gives repo/pr/17.

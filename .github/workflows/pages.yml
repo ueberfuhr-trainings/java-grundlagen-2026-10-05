@@ -71,14 +71,39 @@ jobs:
 
       - name: Verify generated site
         run: |
-          test -d _site
-          test -f _site/index.html
-          test -f _site/assets/bootstrap.min.css
-          test -f _site/assets/bootstrap.bundle.min.js
-          test ! -f _site/merged-prs.json
+          echo "=== _site directory ==="
+          find _site -maxdepth 4 -type f | sort
 
-          echo "Generated files:"
-          find _site -maxdepth 3 -type f | sort | head -200
+          echo
+          echo "=== Required files ==="
+
+          if [ ! -d "_site" ]; then
+            echo "ERROR: _site does not exist"
+            exit 1
+          fi
+
+          if [ ! -f "_site/index.html" ]; then
+            echo "ERROR: _site/index.html does not exist"
+            exit 1
+          fi
+
+          if [ ! -f "_site/assets/bootstrap.min.css" ]; then
+            echo "ERROR: Bootstrap CSS does not exist"
+            exit 1
+          fi
+
+          if [ ! -f "_site/assets/bootstrap.bundle.min.js" ]; then
+            echo "ERROR: Bootstrap JS does not exist"
+            exit 1
+          fi
+
+          if [ -f "_site/merged-prs.json" ]; then
+            echo "ERROR: merged-prs.json must not be published"
+            exit 1
+          fi
+
+          echo
+          echo "=== Verification successful ==="
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
