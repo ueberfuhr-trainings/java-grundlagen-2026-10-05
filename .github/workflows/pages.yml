@@ -23,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # ============================================================
       # Checkout complete repository history.
       #
-      # We need old merge commits because historical PR snapshots
-      # are generated from their merge_commit_sha.
+      # Historical PR pages are generated from their merge commits.
       # ============================================================
 
       - name: Checkout repository
@@ -43,7 +43,32 @@ jobs:
         uses: actions/configure-pages@v5
 
       # ============================================================
-      # Install Python packages used by the site generator
+      # Download Bootstrap locally.
+      #
+      # Bootstrap is therefore part of the generated GitHub Pages
+      # website and is NOT loaded by learners from a CDN.
+      # ============================================================
+
+      - name: Download Bootstrap
+        run: |
+          mkdir -p _site/assets
+
+          curl -L \
+            --fail \
+            --silent \
+            --show-error \
+            https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css \
+            -o _site/assets/bootstrap.min.css
+
+          curl -L \
+            --fail \
+            --silent \
+            --show-error \
+            https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js \
+            -o _site/assets/bootstrap.bundle.min.js
+
+      # ============================================================
+      # Install Python packages used by the generator.
       # ============================================================
 
       - name: Install website generator
@@ -52,9 +77,11 @@ jobs:
           python3 -m pip install pygments markdown
 
       # ============================================================
-      # Get information about merged pull requests
+      # Get merged pull requests.
       #
-      # The result is stored in merged-prs.json.
+      # IMPORTANT:
+      # merged-prs.json is created outside the source project and
+      # will never be copied into the generated website.
       # ============================================================
 
       - name: Get merged pull requests
@@ -66,32 +93,36 @@ jobs:
             --state merged \
             --limit 1000 \
             --json number,title,mergeCommit,mergedAt \
-            > merged-prs.json
+            > "$RUNNER_TEMP/merged-prs.json"
 
           echo "Merged PRs:"
-          cat merged-prs.json
+          cat "$RUNNER_TEMP/merged-prs.json"
 
       # ============================================================
-      # Generate complete static website
+      # Generate complete static website.
       # ============================================================
 
       - name: Generate website
         env:
-          GH_TOKEN: ${{ github.token }}
+          PR_DATA_FILE: ${{ runner.temp }}/merged-prs.json
         shell: python
         run: |
+
           import json
           import os
-          import re
           import shutil
           import subprocess
           from html import escape
           from pathlib import Path
 
           import markdown
+
           from pygments import highlight
           from pygments.formatters import HtmlFormatter
-          from pygments.lexers import TextLexer, get_lexer_for_filename
+          from pygments.lexers import (
+              TextLexer,
+              get_lexer_for_filename
+          )
 
 
           # ==========================================================
@@ -100,7 +131,18 @@ jobs:
 
           SOURCE = Path(".").resolve()
           SITE = SOURCE / "_site"
-          PR_DATA = SOURCE / "merged-prs.json"
+
+          PR_DATA = Path(
+              os.environ["PR_DATA_FILE"]
+          )
+
+
+          # ==========================================================
+          # Clean generated site.
+          #
+          # Bootstrap was downloaded into _site/assets before this
+          # step, so remember it and download it again afterwards.
+          # ==========================================================
 
           if SITE.exists():
               shutil.rmtree(SITE)
@@ -109,7 +151,7 @@ jobs:
 
 
           # ==========================================================
-          # Configuration
+          # Project files which must NOT appear on the website.
           # ==========================================================
 
           EXCLUDED_DIRS = {
@@ -126,11 +168,12 @@ jobs:
               ".gitignore",
               ".gitattributes",
               ".gitmodules",
+              "merged-prs.json",
           }
 
 
           # ==========================================================
-          # Pygments
+          # Pygments configuration
           # ==========================================================
 
           formatter = HtmlFormatter(
@@ -139,180 +182,44 @@ jobs:
               cssclass="highlight"
           )
 
-          PYGMENTS_CSS = formatter.get_style_defs(".highlight")
+          PYGMENTS_CSS = formatter.get_style_defs(
+              ".highlight"
+          )
 
 
           # ==========================================================
-          # CSS
+          # Custom CSS
+          #
+          # Bootstrap handles the general layout.
+          # This CSS only handles source-code specific details.
           # ==========================================================
 
           CSS = f"""
-          :root {{
-              --background: #ffffff;
-              --foreground: #24292f;
-              --border: #d0d7de;
-              --link: #0969da;
-              --sidebar: #f6f8fa;
-              --code-background: #f6f8fa;
-              --muted: #57606a;
-          }}
-
-          * {{
-              box-sizing: border-box;
-          }}
-
-          html {{
-              scroll-behavior: smooth;
-          }}
-
           body {{
-              margin: 0;
-              font-family:
-                  system-ui,
-                  -apple-system,
-                  BlinkMacSystemFont,
-                  "Segoe UI",
-                  sans-serif;
-              color: var(--foreground);
-              background: var(--background);
-              line-height: 1.5;
+              background-color: #f8f9fa;
           }}
 
-          a {{
-              color: var(--link);
-              text-decoration: none;
-          }}
-
-          a:hover {{
-              text-decoration: underline;
-          }}
-
-          .layout {{
-              display: flex;
-              min-height: 100vh;
-          }}
-
-          .sidebar {{
-              width: 320px;
-              flex-shrink: 0;
-              background: var(--sidebar);
-              border-right: 1px solid var(--border);
-              padding: 24px 18px;
-              position: sticky;
-              top: 0;
-              height: 100vh;
-              overflow-y: auto;
-          }}
-
-          .sidebar h1 {{
-              font-size: 1.15rem;
-              margin: 0 0 20px 0;
-              overflow-wrap: anywhere;
-          }}
-
-          .sidebar ul {{
-              list-style: none;
-              margin: 0;
-              padding-left: 14px;
-          }}
-
-          .sidebar > ul {{
-              padding-left: 0;
-          }}
-
-          .sidebar li {{
-              margin: 3px 0;
-          }}
-
-          .sidebar a {{
-              display: block;
-              padding: 3px 6px;
-              border-radius: 5px;
-              overflow-wrap: anywhere;
-          }}
-
-          .sidebar a:hover {{
-              background: #eaeef2;
-              text-decoration: none;
-          }}
-
-          .file-icon {{
-              display: inline-block;
-              width: 22px;
-          }}
-
-          .folder-icon {{
-              display: inline-block;
-              width: 22px;
-          }}
-
-          .content {{
-              flex: 1;
+          .app-content {{
               min-width: 0;
-              padding: 40px;
-          }}
-
-          .content-inner {{
-              max-width: 1400px;
-              margin: 0 auto;
-          }}
-
-          .breadcrumb {{
-              color: var(--muted);
-              font-size: 0.9rem;
-              margin-bottom: 24px;
-              overflow-wrap: anywhere;
-          }}
-
-          h1 {{
-              font-size: 2rem;
-              margin-top: 0;
-          }}
-
-          h2 {{
-              margin-top: 2rem;
-              border-bottom: 1px solid var(--border);
-              padding-bottom: 6px;
-          }}
-
-          .file-list {{
-              border: 1px solid var(--border);
-              border-radius: 8px;
-              overflow: hidden;
-          }}
-
-          .file-list a {{
-              display: block;
-              padding: 10px 14px;
-              border-bottom: 1px solid var(--border);
-          }}
-
-          .file-list a:last-child {{
-              border-bottom: 0;
-          }}
-
-          .file-list a:hover {{
-              background: var(--sidebar);
-              text-decoration: none;
           }}
 
           .source-container {{
-              border: 1px solid var(--border);
-              border-radius: 8px;
+              border: 1px solid #dee2e6;
+              border-radius: .5rem;
               overflow: auto;
-              background: var(--code-background);
+              background: #f8f9fa;
           }}
 
           .highlight {{
               margin: 0;
               padding: 0;
-              font-size: 0.9rem;
+              font-size: .9rem;
               line-height: 1.5;
           }}
 
           .highlight pre {{
               margin: 0;
-              padding: 18px;
+              padding: 1rem;
           }}
 
           .highlighttable {{
@@ -326,10 +233,11 @@ jobs:
 
           .highlighttable .linenos {{
               user-select: none;
-              color: #8c959f;
+              color: #6c757d;
               text-align: right;
-              padding: 18px 12px;
-              border-right: 1px solid var(--border);
+              padding: 1rem .75rem;
+              border-right: 1px solid #dee2e6;
+              background: #f1f3f5;
           }}
 
           .highlighttable .code {{
@@ -337,11 +245,11 @@ jobs:
           }}
 
           .highlighttable .code pre {{
-              padding-left: 16px;
+              padding-left: 1rem;
           }}
 
           .markdown-body {{
-              max-width: 900px;
+              max-width: 950px;
           }}
 
           .markdown-body img {{
@@ -349,16 +257,16 @@ jobs:
           }}
 
           .markdown-body pre {{
-              background: var(--code-background);
-              padding: 16px;
+              background: #f8f9fa;
+              padding: 1rem;
               overflow-x: auto;
-              border-radius: 8px;
+              border-radius: .5rem;
           }}
 
           .markdown-body code {{
-              background: var(--code-background);
-              padding: 2px 4px;
-              border-radius: 4px;
+              background: #f1f3f5;
+              padding: .15rem .3rem;
+              border-radius: .25rem;
           }}
 
           .markdown-body pre code {{
@@ -366,62 +274,21 @@ jobs:
               padding: 0;
           }}
 
-          .pr-list {{
-              display: grid;
-              gap: 12px;
-              margin-top: 20px;
+          .file-list .list-group-item {{
+              transition: background-color .1s ease;
           }}
 
-          .pr-card {{
-              border: 1px solid var(--border);
-              border-radius: 8px;
-              padding: 16px;
+          .file-list .list-group-item:hover {{
+              background-color: #f8f9fa;
           }}
 
-          .pr-card:hover {{
-              background: var(--sidebar);
+          .version-select {{
+              min-width: 360px;
           }}
 
-          .pr-number {{
-              font-weight: 600;
-          }}
-
-          .pr-title {{
-              font-size: 1.05rem;
-              margin-top: 4px;
-          }}
-
-          .pr-meta {{
-              color: var(--muted);
-              font-size: 0.9rem;
-              margin-top: 8px;
-          }}
-
-          .badge {{
-              display: inline-block;
-              padding: 2px 8px;
-              border-radius: 999px;
-              background: #ddf4ff;
-              color: #0969da;
-              font-size: 0.8rem;
-              font-weight: 600;
-          }}
-
-          @media (max-width: 800px) {{
-              .layout {{
-                  display: block;
-              }}
-
-              .sidebar {{
-                  position: static;
-                  width: auto;
-                  height: auto;
-                  border-right: 0;
-                  border-bottom: 1px solid var(--border);
-              }}
-
-              .content {{
-                  padding: 24px 16px;
+          @media (max-width: 576px) {{
+              .version-select {{
+                  min-width: 100%;
               }}
           }}
 
@@ -438,7 +305,11 @@ jobs:
           # Utility functions
           # ==========================================================
 
-          def relative_url(from_dir: Path, target: Path) -> str:
+          def relative_url(
+              from_dir: Path,
+              target: Path
+          ):
+
               import os
 
               return Path(
@@ -449,17 +320,24 @@ jobs:
               ).as_posix()
 
 
-          def collect_children(directory: Path):
+          def collect_children(
+              directory: Path
+          ):
+
               children = []
 
               for child in directory.iterdir():
+
                   if child.name.startswith("."):
                       continue
 
                   if child.name in EXCLUDED_FILES:
                       continue
 
-                  if child.is_dir() and child.name in EXCLUDED_DIRS:
+                  if (
+                      child.is_dir()
+                      and child.name in EXCLUDED_DIRS
+                  ):
                       continue
 
                   children.append(child)
@@ -474,24 +352,30 @@ jobs:
 
 
           def find_lexer(path: Path):
+
               try:
                   return get_lexer_for_filename(
                       path.name,
                       stripnl=False,
                       stripall=False
                   )
+
               except Exception:
                   return TextLexer()
 
 
-          def source_html(path: Path) -> str:
+          def source_html(path: Path):
+
               try:
                   content = path.read_text(
                       encoding="utf-8",
                       errors="replace"
                   )
+
               except Exception:
-                  content = "(Datei konnte nicht gelesen werden.)"
+                  content = (
+                      "(Datei konnte nicht gelesen werden.)"
+                  )
 
               return highlight(
                   content,
@@ -500,487 +384,222 @@ jobs:
               )
 
 
+          # ==========================================================
+          # Determine GitHub Pages base URL.
+          #
+          # Example:
+          #
+          # https://user.github.io/repository/
+          #
+          # The generated pages must work from any subdirectory.
+          # ==========================================================
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+
+          owner, repo = repository.split("/", 1)
+
+          PAGES_BASE = f"/{repo}/"
+
+
+          # ==========================================================
+          # Page template
+          # ==========================================================
+
           def page_template(
               title,
               breadcrumb,
               sidebar,
-              body
+              body,
+              current_snapshot
           ):
-              return f"""<!DOCTYPE html>
+
+              return f"""<!doctype html>
+
           <html lang="de">
+
           <head>
+
               <meta charset="utf-8">
-              <meta name="viewport"
-                    content="width=device-width, initial-scale=1">
+
+              <meta
+                  name="viewport"
+                  content="width=device-width, initial-scale=1"
+              >
 
               <title>{escape(title)}</title>
 
-              <link rel="stylesheet" href="/style.css">
+              <link
+                  rel="stylesheet"
+                  href="{PAGES_BASE}assets/bootstrap.min.css"
+              >
+
+              <link
+                  rel="stylesheet"
+                  href="{PAGES_BASE}style.css"
+              >
+
           </head>
 
           <body>
 
-          <div class="layout">
+          <!-- =====================================================
+               Navigation
+               ===================================================== -->
 
-              <aside class="sidebar">
+          <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
 
-                  <h1>
-                      <a href="/index.html">
-                          Maven-Projekt
-                      </a>
-                  </h1>
+              <div class="container-fluid">
 
-                  {sidebar}
+                  <a
+                      class="navbar-brand fw-semibold"
+                      href="{PAGES_BASE}index.html"
+                  >
+                      📚 Maven-Projekt
+                  </a>
 
-              </aside>
+                  <button
+                      class="navbar-toggler"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#mainNavbar"
+                      aria-controls="mainNavbar"
+                      aria-expanded="false"
+                      aria-label="Navigation anzeigen"
+                  >
+                      <span class="navbar-toggler-icon"></span>
+                  </button>
 
-              <main class="content">
 
-                  <div class="content-inner">
+                  <div
+                      class="collapse navbar-collapse"
+                      id="mainNavbar"
+                  >
 
-                      <div class="breadcrumb">
-                          {breadcrumb}
+                      <div class="ms-auto d-flex align-items-center gap-2">
+
+                          <label
+                              for="versionSelector"
+                              class="text-light mb-0"
+                          >
+                              Version:
+                          </label>
+
+                          <select
+                              id="versionSelector"
+                              class="form-select form-select-sm version-select"
+                          >
+                              {build_version_options(
+                                  current_snapshot
+                              )}
+                          </select>
+
                       </div>
-
-                      {body}
 
                   </div>
 
-              </main>
+              </div>
+
+          </nav>
+
+
+          <!-- =====================================================
+               Main layout
+               ===================================================== -->
+
+          <div class="container-fluid">
+
+              <div class="row">
+
+                  <!-- Sidebar -->
+
+                  <aside
+                      class="col-lg-3 col-xl-2 border-end bg-light"
+                  >
+
+                      <div
+                          class="p-3 sticky-lg-top"
+                          style="top: 0;"
+                      >
+
+                          <div class="small text-secondary mb-2">
+                              Projektstruktur
+                          </div>
+
+                          {sidebar}
+
+                      </div>
+
+                  </aside>
+
+
+                  <!-- Content -->
+
+                  <main class="col-lg-9 col-xl-10 app-content">
+
+                      <div class="container-fluid py-4">
+
+                          <div class="mb-3 text-secondary small">
+                              {breadcrumb}
+                          </div>
+
+                          {body}
+
+                      </div>
+
+                  </main>
+
+              </div>
 
           </div>
 
+
+          <!-- =====================================================
+               Bootstrap JavaScript
+               ===================================================== -->
+
+          <script
+              src="{PAGES_BASE}assets/bootstrap.bundle.min.js"
+          ></script>
+
+
+          <!-- =====================================================
+               Version selector
+               ===================================================== -->
+
+          <script>
+
+              document
+                  .getElementById("versionSelector")
+                  .addEventListener("change", function () {{
+
+                      const url = this.value;
+
+                      if (url) {{
+                          window.location.href = url;
+                      }}
+
+                  }});
+
+          </script>
+
           </body>
+
           </html>
           """
 
 
           # ==========================================================
-          # Navigation
+          # Version selector
           # ==========================================================
 
-          def build_navigation(
-              root_directory: Path,
-              current_output_directory: Path
-          ) -> str:
-
-              def render_directory(directory: Path):
-                  items = []
-
-                  for child in collect_children(directory):
-
-                      if child.is_dir():
-
-                          target = (
-                              SITE
-                              / child.relative_to(SOURCE)
-                              / "index.html"
-                          )
-
-                          href = relative_url(
-                              current_output_directory,
-                              target
-                          )
-
-                          nested = render_directory(child)
-
-                          items.append(
-                              f"""
-                              <li>
-                                  <a href="{href}">
-                                      <span class="folder-icon">📁</span>
-                                      {escape(child.name)}
-                                  </a>
-                                  {nested}
-                              </li>
-                              """
-                          )
-
-                      else:
-
-                          target = (
-                              SITE
-                              / child.relative_to(SOURCE)
-                          ).with_suffix(".html")
-
-                          href = relative_url(
-                              current_output_directory,
-                              target
-                          )
-
-                          items.append(
-                              f"""
-                              <li>
-                                  <a href="{href}">
-                                      <span class="file-icon">📄</span>
-                                      {escape(child.name)}
-                                  </a>
-                              </li>
-                              """
-                          )
-
-                  if not items:
-                      return ""
-
-                  return "<ul>" + "".join(items) + "</ul>"
-
-              return render_directory(root_directory)
-
-
-          # ==========================================================
-          # Generate one project snapshot
-          # ==========================================================
-
-          def generate_snapshot(
-              source_root: Path,
-              output_root: Path,
-              title: str,
-              subtitle: str = ""
-          ):
-
-              if output_root.exists():
-                  shutil.rmtree(output_root)
-
-              output_root.mkdir(
-                  parents=True,
-                  exist_ok=True
-              )
-
-              # ------------------------------------------------------
-              # Navigation
-              # ------------------------------------------------------
-
-              def snapshot_navigation(
-                  current_output_directory: Path
-              ):
-
-                  def render(directory: Path):
-
-                      items = []
-
-                      for child in collect_children(directory):
-
-                          if child.is_dir():
-
-                              target = (
-                                  output_root
-                                  / child.relative_to(source_root)
-                                  / "index.html"
-                              )
-
-                              href = relative_url(
-                                  current_output_directory,
-                                  target
-                              )
-
-                              nested = render(child)
-
-                              items.append(
-                                  f"""
-                                  <li>
-                                      <a href="{href}">
-                                          <span class="folder-icon">📁</span>
-                                          {escape(child.name)}
-                                      </a>
-                                      {nested}
-                                  </li>
-                                  """
-                              )
-
-                          else:
-
-                              target = (
-                                  output_root
-                                  / child.relative_to(source_root)
-                              ).with_suffix(".html")
-
-                              href = relative_url(
-                                  current_output_directory,
-                                  target
-                              )
-
-                              items.append(
-                                  f"""
-                                  <li>
-                                      <a href="{href}">
-                                          <span class="file-icon">📄</span>
-                                          {escape(child.name)}
-                                      </a>
-                                  </li>
-                                  """
-                              )
-
-                      if not items:
-                          return ""
-
-                      return "<ul>" + "".join(items) + "</ul>"
-
-                  return render(source_root)
-
-
-              # ------------------------------------------------------
-              # Directory pages
-              # ------------------------------------------------------
-
-              def generate_directory(directory: Path):
-
-                  relative = directory.relative_to(source_root)
-
-                  output_dir = (
-                      output_root / relative
-                  )
-
-                  output_dir.mkdir(
-                      parents=True,
-                      exist_ok=True
-                  )
-
-                  output_file = output_dir / "index.html"
-
-                  entries = []
-
-                  # Parent
-                  if relative != Path("."):
-
-                      parent_output = (
-                          output_root
-                          / directory.parent.relative_to(source_root)
-                          / "index.html"
-                      )
-
-                      entries.append(
-                          f"""
-                          <a href="{relative_url(output_dir, parent_output)}">
-                              ↩️ ..
-                          </a>
-                          """
-                      )
-
-                  for child in collect_children(directory):
-
-                      if child.is_dir():
-
-                          target = (
-                              output_root
-                              / child.relative_to(source_root)
-                              / "index.html"
-                          )
-
-                          href = relative_url(
-                              output_dir,
-                              target
-                          )
-
-                          entries.append(
-                              f"""
-                              <a href="{href}">
-                                  📁 {escape(child.name)}/
-                              </a>
-                              """
-                          )
-
-                      else:
-
-                          target = (
-                              output_root
-                              / child.relative_to(source_root)
-                          ).with_suffix(".html")
-
-                          href = relative_url(
-                              output_dir,
-                              target
-                          )
-
-                          entries.append(
-                              f"""
-                              <a href="{href}">
-                                  📄 {escape(child.name)}
-                              </a>
-                              """
-                          )
-
-                  path_text = (
-                      "/"
-                      if relative == Path(".")
-                      else "/" + relative.as_posix() + "/"
-                  )
-
-                  body = f"""
-                  <h1>{escape(title)}</h1>
-
-                  {subtitle}
-
-                  <p>
-                      Verzeichnis:
-                      <code>{escape(path_text)}</code>
-                  </p>
-
-                  <div class="file-list">
-                      {"".join(entries)}
-                  </div>
-                  """
-
-                  sidebar = snapshot_navigation(output_dir)
-
-                  output_file.write_text(
-                      page_template(
-                          title,
-                          escape(path_text),
-                          sidebar,
-                          body
-                      ),
-                      encoding="utf-8"
-                  )
-
-
-              # ------------------------------------------------------
-              # File pages
-              # ------------------------------------------------------
-
-              def generate_file(path: Path):
-
-                  relative = path.relative_to(source_root)
-
-                  output_file = (
-                      output_root / relative
-                  ).with_suffix(".html")
-
-                  output_file.parent.mkdir(
-                      parents=True,
-                      exist_ok=True
-                  )
-
-                  # README
-                  if path.name.lower() == "readme.md":
-
-                      source = path.read_text(
-                          encoding="utf-8",
-                          errors="replace"
-                      )
-
-                      html = markdown.markdown(
-                          source,
-                          extensions=[
-                              "fenced_code",
-                              "tables",
-                              "toc",
-                          ]
-                      )
-
-                      body = f"""
-                      <h1>{escape(path.name)}</h1>
-
-                      <div class="markdown-body">
-                          {html}
-                      </div>
-                      """
-
-                  else:
-
-                      highlighted = source_html(path)
-
-                      body = f"""
-                      <h1>{escape(path.name)}</h1>
-
-                      <p>
-                          <code>{escape(relative.as_posix())}</code>
-                      </p>
-
-                      <div class="source-container">
-                          {highlighted}
-                      </div>
-                      """
-
-                  sidebar = snapshot_navigation(
-                      output_file.parent
-                  )
-
-                  output_file.write_text(
-                      page_template(
-                          path.name,
-                          escape("/" + relative.as_posix()),
-                          sidebar,
-                          body
-                      ),
-                      encoding="utf-8"
-                  )
-
-
-              # ------------------------------------------------------
-              # Find all directories/files
-              # ------------------------------------------------------
-
-              directories = []
-              files = []
-
-              for path in source_root.rglob("*"):
-
-                  relative_parts = path.relative_to(
-                      source_root
-                  ).parts
-
-                  if any(
-                      part in EXCLUDED_DIRS
-                      for part in relative_parts
-                  ):
-                      continue
-
-                  if path.name.startswith("."):
-                      continue
-
-                  if path.is_dir():
-                      directories.append(path)
-
-                  elif path.is_file():
-
-                      if path.name not in EXCLUDED_FILES:
-                          files.append(path)
-
-              for directory in sorted(
-                  directories,
-                  key=lambda p: len(p.parts)
-              ):
-                  generate_directory(directory)
-
-              for path in files:
-                  generate_file(path)
-
-              # Root last
-              generate_directory(source_root)
-
-
-          # ==========================================================
-          # 1. Generate current main version
-          # ==========================================================
-
-          print("Generating current main version...")
-
-          generate_snapshot(
-              SOURCE,
-              SITE,
-              "Maven-Projekt",
-              """
-              <p>
-                  <span class="badge">Aktueller Stand</span>
-                  <br>
-                  Dies ist der aktuelle Stand des Projekts auf
-                  <code>main</code>.
-              </p>
-              """
-          )
-
-
-          # ==========================================================
-          # 2. Read merged PR information
-          # ==========================================================
+          merged_prs = []
 
           with PR_DATA.open(
               encoding="utf-8"
           ) as f:
+
               pull_requests = json.load(f)
 
-
-          merged_prs = []
 
           for pr in pull_requests:
 
@@ -1002,52 +621,626 @@ jobs:
               })
 
 
-          # Newest PR first
+          # Newest merge first.
           merged_prs.sort(
               key=lambda x: x.get("mergedAt") or "",
               reverse=True
           )
 
 
+          def build_version_options(
+              current_snapshot
+          ):
+
+              options = []
+
+              selected = (
+                  "selected"
+                  if current_snapshot == "main"
+                  else ""
+              )
+
+              options.append(
+                  f"""
+                  <option
+                      value="{PAGES_BASE}index.html"
+                      {selected}
+                  >
+                      main – aktueller Stand
+                  </option>
+                  """
+              )
+
+              for pr in merged_prs:
+
+                  number = pr["number"]
+                  title = pr["title"]
+
+                  selected = (
+                      "selected"
+                      if (
+                          current_snapshot
+                          == f"pr/{number}"
+                      )
+                      else ""
+                  )
+
+                  options.append(
+                      f"""
+                      <option
+                          value="{PAGES_BASE}pr/{number}/index.html"
+                          {selected}
+                      >
+                          PR #{number} – {escape(title)}
+                      </option>
+                      """
+                  )
+
+              return "".join(options)
+
+
           # ==========================================================
-          # 3. Generate PR snapshots
+          # Generate snapshot
+          # ==========================================================
+
+          def generate_snapshot(
+              source_root: Path,
+              output_root: Path,
+              title: str,
+              subtitle: str,
+              snapshot_id: str
+          ):
+
+              if output_root.exists():
+                  shutil.rmtree(output_root)
+
+              output_root.mkdir(
+                  parents=True,
+                  exist_ok=True
+              )
+
+
+              # ------------------------------------------------------
+              # Navigation
+              # ------------------------------------------------------
+
+              def navigation(
+                  directory: Path,
+                  current_output_directory: Path
+              ):
+
+                  def render(
+                      current_directory: Path
+                  ):
+
+                      items = []
+
+                      for child in collect_children(
+                          current_directory
+                      ):
+
+                          if child.is_dir():
+
+                              target = (
+                                  output_root
+                                  / child.relative_to(
+                                      source_root
+                                  )
+                                  / "index.html"
+                              )
+
+                              href = relative_url(
+                                  current_output_directory,
+                                  target
+                              )
+
+                              nested = render(child)
+
+                              items.append(
+                                  f"""
+                                  <li class="mb-1">
+
+                                      <a
+                                          class="text-decoration-none"
+                                          href="{href}"
+                                      >
+                                          📁
+                                          {escape(child.name)}
+                                      </a>
+
+                                      {nested}
+
+                                  </li>
+                                  """
+                              )
+
+                          else:
+
+                              target = (
+                                  output_root
+                                  / child.relative_to(
+                                      source_root
+                                  )
+                              ).with_suffix(".html")
+
+                              href = relative_url(
+                                  current_output_directory,
+                                  target
+                              )
+
+                              items.append(
+                                  f"""
+                                  <li class="mb-1">
+
+                                      <a
+                                          class="text-decoration-none"
+                                          href="{href}"
+                                      >
+                                          📄
+                                          {escape(child.name)}
+                                      </a>
+
+                                  </li>
+                                  """
+                              )
+
+
+                      if not items:
+                          return ""
+
+                      return (
+                          '<ul class="list-unstyled ms-2">'
+                          + "".join(items)
+                          + "</ul>"
+                      )
+
+
+                  return render(directory)
+
+
+              # ------------------------------------------------------
+              # Directory page
+              # ------------------------------------------------------
+
+              def generate_directory(
+                  directory: Path
+              ):
+
+                  relative = directory.relative_to(
+                      source_root
+                  )
+
+                  output_dir = (
+                      output_root / relative
+                  )
+
+                  output_dir.mkdir(
+                      parents=True,
+                      exist_ok=True
+                  )
+
+                  output_file = (
+                      output_dir / "index.html"
+                  )
+
+                  entries = []
+
+
+                  # Parent link
+
+                  if relative != Path("."):
+
+                      parent_output = (
+                          output_root
+                          / directory.parent.relative_to(
+                              source_root
+                          )
+                          / "index.html"
+                      )
+
+                      entries.append(
+                          f"""
+                          <a
+                              class="list-group-item list-group-item-action"
+                              href="{relative_url(
+                                  output_dir,
+                                  parent_output
+                              )}"
+                          >
+                              ↩️ Übergeordnetes Verzeichnis
+                          </a>
+                          """
+                      )
+
+
+                  # Children
+
+                  for child in collect_children(
+                      directory
+                  ):
+
+                      if child.is_dir():
+
+                          target = (
+                              output_root
+                              / child.relative_to(
+                                  source_root
+                              )
+                              / "index.html"
+                          )
+
+                          href = relative_url(
+                              output_dir,
+                              target
+                          )
+
+                          entries.append(
+                              f"""
+                              <a
+                                  class="list-group-item
+                                         list-group-item-action"
+                                  href="{href}"
+                              >
+                                  📁
+                                  <span class="fw-semibold">
+                                      {escape(child.name)}
+                                  </span>
+                              </a>
+                              """
+                          )
+
+                      else:
+
+                          target = (
+                              output_root
+                              / child.relative_to(
+                                  source_root
+                              )
+                          ).with_suffix(".html")
+
+                          href = relative_url(
+                              output_dir,
+                              target
+                          )
+
+                          entries.append(
+                              f"""
+                              <a
+                                  class="list-group-item
+                                         list-group-item-action"
+                                  href="{href}"
+                              >
+                                  📄
+                                  {escape(child.name)}
+                              </a>
+                              """
+                          )
+
+
+                  path_text = (
+                      "/"
+                      if relative == Path(".")
+                      else "/" + relative.as_posix() + "/"
+                  )
+
+
+                  body = f"""
+
+                  <div class="d-flex
+                              flex-wrap
+                              justify-content-between
+                              align-items-start
+                              gap-3
+                              mb-4">
+
+                      <div>
+
+                          <h1 class="h2 mb-2">
+                              {escape(title)}
+                          </h1>
+
+                          {subtitle}
+
+                      </div>
+
+                  </div>
+
+
+                  <div class="card shadow-sm">
+
+                      <div class="card-header">
+                          <code>
+                              {escape(path_text)}
+                          </code>
+                      </div>
+
+                      <div class="list-group list-group-flush">
+
+                          {"".join(entries)}
+
+                      </div>
+
+                  </div>
+
+                  """
+
+
+                  sidebar = navigation(
+                      directory,
+                      output_dir
+                  )
+
+
+                  output_file.write_text(
+                      page_template(
+                          title,
+                          escape(path_text),
+                          sidebar,
+                          body,
+                          snapshot_id
+                      ),
+                      encoding="utf-8"
+                  )
+
+
+              # ------------------------------------------------------
+              # File page
+              # ------------------------------------------------------
+
+              def generate_file(
+                  path: Path
+              ):
+
+                  relative = path.relative_to(
+                      source_root
+                  )
+
+                  output_file = (
+                      output_root / relative
+                  ).with_suffix(".html")
+
+                  output_file.parent.mkdir(
+                      parents=True,
+                      exist_ok=True
+                  )
+
+
+                  # README
+
+                  if path.name.lower() == "readme.md":
+
+                      source = path.read_text(
+                          encoding="utf-8",
+                          errors="replace"
+                      )
+
+                      html = markdown.markdown(
+                          source,
+                          extensions=[
+                              "fenced_code",
+                              "tables",
+                              "toc",
+                          ]
+                      )
+
+                      body = f"""
+
+                      <div class="card shadow-sm">
+
+                          <div class="card-header">
+                              📖 {escape(path.name)}
+                          </div>
+
+                          <div class="card-body markdown-body">
+
+                              {html}
+
+                          </div>
+
+                      </div>
+
+                      """
+
+
+                  # Source code
+
+                  else:
+
+                      highlighted = source_html(
+                          path
+                      )
+
+                      body = f"""
+
+                      <div class="d-flex
+                                  justify-content-between
+                                  align-items-center
+                                  flex-wrap
+                                  gap-2
+                                  mb-3">
+
+                          <div>
+
+                              <h1 class="h3 mb-1">
+                                  {escape(path.name)}
+                              </h1>
+
+                              <div class="text-secondary">
+                                  <code>
+                                      {escape(
+                                          relative.as_posix()
+                                      )}
+                                  </code>
+                              </div>
+
+                          </div>
+
+                          <span class="badge text-bg-secondary">
+                              Quellcode
+                          </span>
+
+                      </div>
+
+
+                      <div class="source-container shadow-sm">
+
+                          {highlighted}
+
+                      </div>
+
+                      """
+
+
+                  sidebar = navigation(
+                      path.parent,
+                      output_file.parent
+                  )
+
+
+                  output_file.write_text(
+                      page_template(
+                          path.name,
+                          escape(
+                              "/" + relative.as_posix()
+                          ),
+                          sidebar,
+                          body,
+                          snapshot_id
+                      ),
+                      encoding="utf-8"
+                  )
+
+
+              # ------------------------------------------------------
+              # Find files
+              # ------------------------------------------------------
+
+              directories = []
+              files = []
+
+              for path in source_root.rglob("*"):
+
+                  relative_parts = path.relative_to(
+                      source_root
+                  ).parts
+
+                  if any(
+                      part in EXCLUDED_DIRS
+                      for part in relative_parts
+                  ):
+                      continue
+
+                  if path.name.startswith("."):
+                      continue
+
+                  if path.is_dir():
+
+                      directories.append(path)
+
+                  elif path.is_file():
+
+                      if path.name not in EXCLUDED_FILES:
+
+                          files.append(path)
+
+
+              for directory in sorted(
+                  directories,
+                  key=lambda p: len(p.parts)
+              ):
+
+                  generate_directory(
+                      directory
+                  )
+
+
+              for path in files:
+
+                  generate_file(
+                      path
+                  )
+
+
+              generate_directory(
+                  source_root
+              )
+
+
+          # ==========================================================
+          # Bootstrap was downloaded before the generator cleaned
+          # _site. Download it again after generation.
+          # ==========================================================
+
+          # ==========================================================
+          # Current main
+          # ==========================================================
+
+          print(
+              "Generating current main version..."
+          )
+
+          generate_snapshot(
+              SOURCE,
+              SITE,
+              "Maven-Projekt",
+              """
+              <p class="text-secondary mb-0">
+                  <span class="badge text-bg-primary">
+                      main
+                  </span>
+
+                  Aktueller Stand des Projekts.
+              </p>
+              """,
+              "main"
+          )
+
+
+          # ==========================================================
+          # Historical PR snapshots
           # ==========================================================
 
           pr_root = SITE / "pr"
-          pr_root.mkdir(parents=True, exist_ok=True)
+
+          pr_root.mkdir(
+              parents=True,
+              exist_ok=True
+          )
+
 
           print()
           print(
               f"Found {len(merged_prs)} merged pull requests."
           )
 
+
           for pr in merged_prs:
 
               number = pr["number"]
               title = pr["title"]
               sha = pr["sha"]
-              merged_at = pr.get("mergedAt") or ""
+              merged_at = pr.get(
+                  "mergedAt"
+              ) or ""
 
-              print()
+
               print(
                   f"Generating PR #{number}: "
-                  f"{title} ({sha})"
+                  f"{title}"
               )
 
-              # ------------------------------------------------------
-              # Create temporary directory
-              # ------------------------------------------------------
 
-              temp_dir = SOURCE / ".snapshot"
+              temp_dir = (
+                  SOURCE / ".snapshot"
+              )
 
               if temp_dir.exists():
                   shutil.rmtree(temp_dir)
 
               temp_dir.mkdir()
 
-              # ------------------------------------------------------
-              # Extract exact merge commit into temporary directory
-              # ------------------------------------------------------
+
+              # Extract exact merge commit.
 
               archive = subprocess.run(
                   [
@@ -1060,6 +1253,7 @@ jobs:
                   check=True
               )
 
+
               subprocess.run(
                   [
                       "tar",
@@ -1071,76 +1265,128 @@ jobs:
                   check=True
               )
 
-              # ------------------------------------------------------
-              # Generate snapshot
-              # ------------------------------------------------------
 
-              output_dir = pr_root / str(number)
+              output_dir = (
+                  pr_root / str(number)
+              )
+
 
               subtitle = f"""
-              <p>
-                  <span class="badge">
+
+              <p class="text-secondary">
+
+                  <span class="badge text-bg-success">
                       Stand nach Merge
                   </span>
+
               </p>
 
-              <p>
-                  <strong>PR #{number}</strong><br>
-                  {escape(title)}
-              </p>
 
-              <p class="pr-meta">
-                  Merge-Commit:
-                  <code>{escape(sha[:12])}</code>
-                  <br>
-                  Gemergt:
-                  {escape(merged_at)}
-              </p>
+              <div class="card mb-4">
+
+                  <div class="card-body">
+
+                      <h2 class="h5">
+                          PR #{number}
+                      </h2>
+
+                      <p class="mb-2">
+                          {escape(title)}
+                      </p>
+
+                      <dl class="row mb-0 small">
+
+                          <dt class="col-sm-3">
+                              Merge-Commit
+                          </dt>
+
+                          <dd class="col-sm-9">
+                              <code>
+                                  {escape(sha)}
+                              </code>
+                          </dd>
+
+                          <dt class="col-sm-3">
+                              Gemergt
+                          </dt>
+
+                          <dd class="col-sm-9">
+                              {escape(merged_at)}
+                          </dd>
+
+                      </dl>
+
+                  </div>
+
+              </div>
+
               """
+
 
               generate_snapshot(
                   temp_dir,
                   output_dir,
                   f"PR #{number} – {title}",
-                  subtitle
+                  subtitle,
+                  f"pr/{number}"
               )
 
-              shutil.rmtree(temp_dir)
+
+              shutil.rmtree(
+                  temp_dir
+              )
 
 
           # ==========================================================
-          # 4. Replace root index with overview page
+          # Create main landing page
           # ==========================================================
 
           cards = []
+
 
           for pr in merged_prs:
 
               number = pr["number"]
               title = pr["title"]
-              merged_at = pr.get("mergedAt") or ""
+              merged_at = pr.get(
+                  "mergedAt"
+              ) or ""
+
 
               cards.append(
                   f"""
-                  <div class="pr-card">
 
-                      <a href="pr/{number}/index.html">
+                  <div class="col">
 
-                          <div class="pr-number">
-                              PR #{number}
+                      <div class="card h-100 shadow-sm">
+
+                          <div class="card-body">
+
+                              <div class="small text-secondary">
+                                  PR #{number}
+                              </div>
+
+                              <h2 class="h5 card-title">
+                                  {escape(title)}
+                              </h2>
+
+                              <p class="card-text small text-secondary">
+                                  Gemergt: {escape(merged_at)}
+                              </p>
+
+                              <a
+                                  class="btn btn-outline-primary btn-sm"
+                                  href="pr/{number}/index.html"
+                              >
+                                  Stand ansehen
+                              </a>
+
                           </div>
 
-                          <div class="pr-title">
-                              {escape(title)}
-                          </div>
-
-                      </a>
-
-                      <div class="pr-meta">
-                          Gemergt: {escape(merged_at)}
                       </div>
 
                   </div>
+
                   """
               )
 
@@ -1148,69 +1394,122 @@ jobs:
           if cards:
 
               pr_section = f"""
-              <h2>Historische Merge-Stände</h2>
 
-              <p>
-                  Hier findest du den vollständigen Projektstand
-                  direkt nach dem Merge eines Pull Requests.
-                  Es handelt sich nicht um Diffs.
-              </p>
+              <section class="mt-5">
 
-              <div class="pr-list">
-                  {"".join(cards)}
-              </div>
+                  <h2 class="h4 mb-3">
+                      Historische Merge-Stände
+                  </h2>
+
+                  <p class="text-secondary">
+
+                      Jeder Eintrag zeigt den vollständigen
+                      Projektstand unmittelbar nach dem Merge
+                      des jeweiligen Pull Requests.
+
+                  </p>
+
+                  <div class="row row-cols-1
+                              row-cols-md-2
+                              row-cols-xl-3
+                              g-3">
+
+                      {"".join(cards)}
+
+                  </div>
+
+              </section>
+
               """
 
           else:
 
               pr_section = """
-              <h2>Historische Merge-Stände</h2>
 
-              <p>
-                  Es wurden noch keine gemergten Pull Requests
-                  gefunden.
-              </p>
+              <section class="mt-5">
+
+                  <h2 class="h4">
+                      Historische Merge-Stände
+                  </h2>
+
+                  <p class="text-secondary">
+                      Noch keine gemergten Pull Requests.
+                  </p>
+
+              </section>
+
               """
 
 
           root_body = f"""
-          <h1>Maven-Projekt</h1>
 
-          <p>
-              <span class="badge">Aktueller Stand</span>
-          </p>
+          <div class="p-4 p-md-5
+                      mb-4
+                      bg-white
+                      border
+                      rounded-3
+                      shadow-sm">
 
-          <p>
-              Dies ist der aktuelle Stand des Projekts auf
-              <code>main</code>.
-          </p>
+              <div class="container-fluid py-2">
 
-          <p>
-              <a href="README.html">
-                  📖 README anzeigen
-              </a>
-          </p>
+                  <span class="badge text-bg-primary mb-3">
+                      main
+                  </span>
 
-          <p>
-              <a href="pom.html">
-                  📦 pom.xml anzeigen
-              </a>
-          </p>
+                  <h1 class="display-6 fw-bold">
+                      Maven-Projekt
+                  </h1>
+
+                  <p class="lead text-secondary">
+
+                      Aktueller Stand des Java-Projekts.
+
+                  </p>
+
+                  <div class="d-flex
+                              flex-wrap
+                              gap-2">
+
+                      <a
+                          class="btn btn-primary"
+                          href="README.html"
+                      >
+                          📖 README
+                      </a>
+
+                      <a
+                          class="btn btn-outline-secondary"
+                          href="pom.html"
+                      >
+                          📦 pom.xml
+                      </a>
+
+                  </div>
+
+              </div>
+
+          </div>
+
 
           {pr_section}
+
           """
 
-          root_sidebar = build_navigation(
+
+          root_sidebar = navigation(
               SOURCE,
               SITE
           )
+
 
           root_html = page_template(
               "Maven-Projekt",
               "/",
               root_sidebar,
-              root_body
+              root_body,
+              "main"
           )
+
 
           (SITE / "index.html").write_text(
               root_html,
@@ -1219,24 +1518,98 @@ jobs:
 
 
           # ==========================================================
-          # 5. Remove temporary metadata
+          # Download Bootstrap AFTER site generation.
+          #
+          # This ensures Bootstrap survives the cleanup above.
           # ==========================================================
 
-          # The merged PR JSON is outside _site, so it is not
-          # published. Nothing else needs to be removed.
+          assets = SITE / "assets"
+
+          assets.mkdir(
+              parents=True,
+              exist_ok=True
+          )
+
+
+          subprocess.run(
+              [
+                  "curl",
+                  "-L",
+                  "--fail",
+                  "--silent",
+                  "--show-error",
+                  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css",
+                  "-o",
+                  str(
+                      assets / "bootstrap.min.css"
+                  )
+              ],
+              check=True
+          )
+
+
+          subprocess.run(
+              [
+                  "curl",
+                  "-L",
+                  "--fail",
+                  "--silent",
+                  "--show-error",
+                  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
+                  "-o",
+                  str(
+                      assets / "bootstrap.bundle.min.js"
+                  )
+              ],
+              check=True
+          )
+
+
+          # ==========================================================
+          # Final safety check:
+          #
+          # merged-prs.json must NEVER be inside _site.
+          # ==========================================================
+
+          unwanted = (
+              SITE / "merged-prs.json"
+          )
+
+          if unwanted.exists():
+
+              print(
+                  "ERROR: merged-prs.json "
+                  "would be published!"
+              )
+
+              unwanted.unlink()
+
+              raise RuntimeError(
+                  "merged-prs.json was found "
+                  "inside _site."
+              )
 
 
           print()
-          print("==============================================")
-          print("Website generation completed successfully.")
-          print("==============================================")
-          print(f"Output directory: {SITE}")
-          print(f"PR snapshots:     {len(merged_prs)}")
-          print()
+          print(
+              "=============================================="
+          )
+          print(
+              "Website generation completed successfully."
+          )
+          print(
+              "=============================================="
+          )
+          print(
+              f"PR snapshots: {len(merged_prs)}"
+          )
+          print(
+              f"Output:       {SITE}"
+          )
 
 
       # ============================================================
-      # Upload generated website
+      # Upload Pages artifact
       # ============================================================
 
       - name: Upload Pages artifact
@@ -1246,12 +1619,13 @@ jobs:
 
 
   # ================================================================
-  # Deploy to GitHub Pages
+  # Deploy
   # ================================================================
 
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+
     needs: build
 
     environment:
