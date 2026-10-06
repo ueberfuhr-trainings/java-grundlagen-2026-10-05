@@ -8,7 +8,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 # ============================================================
 # Configuration
 # ============================================================
@@ -490,7 +489,7 @@ def render_tree_node(
       r"[^A-Za-z0-9_-]",
       "-",
       parent_id + "-" + directory,
-      )
+    )
 
     child_html = render_tree_node(
       child,
@@ -577,7 +576,7 @@ def render_tree_node_with_prefix(
       r"[^A-Za-z0-9_-]",
       "-",
       parent_id + "-" + directory,
-      )
+    )
 
     child_html = render_tree_node_with_prefix(
       child,
@@ -656,7 +655,7 @@ def find_relative_file_path(node, filename, prefix):
       child,
       filename,
       prefix + [directory],
-      )
+    )
 
     if result:
       return result
@@ -975,22 +974,22 @@ def render_sidebar(
   tree,
   version_base_url,
 ):
-  return (
-    '<div class="sticky-lg-top sidebar-top">'
-    + selector
-    + render_search_box(version_base_url)
+  parts = [
+    '<div class="sticky-lg-top sidebar-top">',
+    selector,
+    render_search_box(version_base_url),
+    '<div class="card shadow-sm">',
+    '<div class="card-header fw-semibold">',
+    'Projektstruktur',
+    '</div>',
+    '<div class="card-body p-2">',
+    tree,
+    '</div>',
+    '</div>',
+    '</div>',
+  ]
 
-    '<div class="card shadow-sm">'
-    '<div class="card-header fw-semibold">'
-    'Projektstruktur'
-    "</div>"
-    '<div class="card-body p-2">'
-    + tree
-    + "</div>"
-    "</div>"
-
-    "</div>"
-  )
+  return "".join(parts)
 
 
 # ============================================================
@@ -1051,8 +1050,8 @@ def render_project_overview(
   if version_type == "main":
     title = "Maven-Projekt"
     subtitle = (
-      "Aktueller Stand des Projekts aus dem Branch "
-      "<code>main</code>."
+      'Aktueller Stand des Projekts aus dem Branch '
+      '<code>main</code>.'
     )
   else:
     title = (
@@ -1072,12 +1071,14 @@ def render_project_overview(
 
   tree = build_tree(source_root)
 
+  sidebar_tree = render_tree_node_with_prefix(
+    tree,
+    version_base_url,
+  )
+
   sidebar = render_sidebar(
     selector,
-    render_tree_node_with_prefix(
-      tree,
-      version_base_url,
-    ),
+    sidebar_tree,
     version_base_url,
   )
 
@@ -1085,53 +1086,60 @@ def render_project_overview(
     version_base_url,
   )
 
-  body = (
-    '<div class="container-fluid py-4">'
-    '<div class="row g-4">'
+  readme = render_readme(source_root)
 
-    '<aside class="col-lg-3 col-xl-2">'
-    + sidebar
-    + "</aside>"
-
-      '<main class="col-lg-9 col-xl-10">'
-
-      '<div class="d-flex flex-wrap justify-content-between '
-      'align-items-start gap-3 mb-4">'
-
-      '<div>'
-      '<div class="text-body-secondary small">'
-      'Java / Maven'
-      "</div>"
-
-      '<h1 class="display-6 fw-semibold">'
-    + title
-    + "</h1>"
-
-      '<p class="lead">'
-    + subtitle
-    + "</p>"
-      "</div>"
-
-      '<button '
-      'id="themeToggle" '
-      'class="btn btn-outline-secondary">'
-      '☾ Dark Mode'
-      "</button>"
-
-      "</div>"
-
-    + render_readme(source_root)
-    + render_pom(
+  pom = render_pom(
     source_root,
     version_base_url,
   )
 
-    + search
+  parts = [
+    '<div class="container-fluid py-4">',
+    '<div class="row g-4">',
 
-    "</main>"
-    "</div>"
-    "</div>"
-  )
+    '<aside class="col-lg-3 col-xl-2">',
+    sidebar,
+    '</aside>',
+
+    '<main class="col-lg-9 col-xl-10">',
+
+    '<div class="d-flex flex-wrap '
+    'justify-content-between '
+    'align-items-start gap-3 mb-4">',
+
+    '<div>',
+    '<div class="text-body-secondary small">',
+    'Java / Maven',
+    '</div>',
+
+    '<h1 class="display-6 fw-semibold">',
+    title,
+    '</h1>',
+
+    '<p class="lead">',
+    subtitle,
+    '</p>',
+
+    '</div>',
+
+    '<button '
+    'id="themeToggle" '
+    'class="btn btn-outline-secondary">',
+    '☾ Dark Mode',
+    '</button>',
+
+    '</div>',
+
+    readme,
+    pom,
+    search,
+
+    '</main>',
+    '</div>',
+    '</div>',
+  ]
+
+  body = "".join(parts)
 
   return render_page(
     title=title,
@@ -1782,7 +1790,7 @@ def write_site_javascript():
   write_text(
     SITE / "site.js",
     js,
-    )
+  )
 
 
 # ============================================================
@@ -1867,7 +1875,7 @@ def generate_version(
   write_text(
     version_directory / "index.html",
     overview,
-    )
+  )
 
 
 # ============================================================
