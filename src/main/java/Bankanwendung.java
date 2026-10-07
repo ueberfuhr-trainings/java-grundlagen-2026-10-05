@@ -30,9 +30,12 @@ public class Bankanwendung {
     kunde3.wohnort.plz = "20095";
     kunde3.wohnort.ort = "Hamburg";
 
-    // bank.kundeAnlegen(kunde1);
-    // bank.kundeAnlegen(kunde2);
-    // bank.kundeAnlegen(kunde3);
+    bank.kundeAnlegen(kunde1);
+    bank.kundeAnlegen(kunde1);
+    bank.kundeAnlegen(kunde2);
+    bank.kundeAnlegen(kunde3);
+
+    System.out.println(kunde1.nummer);
 
     // Konten
 
@@ -47,6 +50,9 @@ public class Bankanwendung {
     Konto konto3 = new Konto();
     konto3.stand = 320000; // 3.200,00 €
     konto3.inhaber = kunde2;
+
+    System.out.println(konto1.getStand());
+    System.out.println(konto2.getStand());
 
     // bank.kontoAnlegen(konto1);
     // bank.kontoAnlegen(konto2);
