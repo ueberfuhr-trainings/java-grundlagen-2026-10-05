@@ -2,7 +2,25 @@
  * Project-specific UI. Bootstrap supplies the basic palette and typography.
  */
 
+/* JetBrains Mono, die Schrift von IntelliJ (variabel, alle Strichstärken) */
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("assets/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
+    font-weight: 100 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("assets/jetbrains-mono-latin-wght-italic.woff2") format("woff2");
+    font-weight: 100 800;
+    font-style: italic;
+    font-display: swap;
+}
+
 :root {
+    --bs-font-monospace: "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
     --project-sidebar-width: 320px;
     --project-sidebar-min: 240px;
     --project-sidebar-max: 560px;
@@ -149,7 +167,15 @@ body.sidebar-resizing * {
 }
 
 .highlight {
+    color: var(--code-text);
     background: transparent;
+}
+
+/* Wie in IntelliJ (Standard): keine Ligaturen, != bleibt != */
+.highlight,
+.search-context {
+    font-variant-ligatures: none;
+    font-feature-settings: "calt" 0, "liga" 0;
 }
 
 .highlight pre {
@@ -161,16 +187,50 @@ body.sidebar-resizing * {
     color: inherit;
 }
 
-/* Pygments token colors use Bootstrap's semantic colors rather than
-   hard-coded light/dark page colors. */
+/* Syntax-Farben wie in IntelliJ IDEA: „IntelliJ Light“ und „Dark“ (neue UI).
+   Pygments erkennt nur die Syntax, nicht die Bedeutung – Felder und lokale
+   Variablen sind daher nicht unterscheidbar und bleiben in Textfarbe. */
+:root,
+[data-bs-theme="light"] {
+    --code-text: #080808;
+    --code-keyword: #0033B3;
+    --code-string: #067D17;
+    --code-escape: #0037A6;
+    --code-number: #1750EB;
+    --code-comment: #8C8C8C;
+    --code-annotation: #9E880D;
+    --code-method: #00627A;
+    --code-variable: #871094;
+    --code-tag: #0033B3;
+    --code-attribute: #174AD4;
+}
+
+[data-bs-theme="dark"] {
+    --code-text: #BCBEC4;
+    --code-keyword: #CF8E6D;
+    --code-string: #6AAB73;
+    --code-escape: #CF8E6D;
+    --code-number: #2AACB8;
+    --code-comment: #7A7E85;
+    --code-annotation: #B3AE60;
+    --code-method: #56A8F5;
+    --code-variable: #C77DBB;
+    --code-tag: #D5B778;
+    --code-attribute: #BABABA;
+}
+
+
+/* Schlüsselwörter, auch Typen (int), Konstanten (true, null), Built-ins */
 .highlight .k,
+.highlight .kc,
 .highlight .kd,
 .highlight .kn,
 .highlight .kp,
 .highlight .kr,
-.highlight .kt {
-    color: var(--bs-primary);
-    font-weight: 600;
+.highlight .kt,
+.highlight .bp,
+.highlight .nb {
+    color: var(--code-keyword);
 }
 
 .highlight .s,
@@ -178,25 +238,17 @@ body.sidebar-resizing * {
 .highlight .sb,
 .highlight .sc,
 .highlight .dl,
-.highlight .sd,
 .highlight .s2,
-.highlight .se,
 .highlight .sh,
 .highlight .si,
 .highlight .sx,
 .highlight .sr,
 .highlight .s1 {
-    color: var(--bs-success);
+    color: var(--code-string);
 }
 
-.highlight .c,
-.highlight .ch,
-.highlight .cm,
-.highlight .cp,
-.highlight .cpf,
-.highlight .c1,
-.highlight .cs {
-    color: var(--bs-secondary-color);
+.highlight .se {
+    color: var(--code-escape);
 }
 
 .highlight .m,
@@ -204,41 +256,74 @@ body.sidebar-resizing * {
 .highlight .mf,
 .highlight .mh,
 .highlight .mi,
+.highlight .il,
 .highlight .mo {
-    color: var(--bs-warning-text-emphasis);
+    color: var(--code-number);
 }
 
-.highlight .nc,
-.highlight .nd,
-.highlight .ne,
+.highlight .c,
+.highlight .ch,
+.highlight .cm,
+.highlight .cpf,
+.highlight .c1,
+.highlight .cs,
+.highlight .sd {
+    color: var(--code-comment);
+    font-style: italic;
+}
+
+.highlight .nd {
+    color: var(--code-annotation);
+}
+
 .highlight .nf,
 .highlight .fm {
-    color: var(--bs-info-text-emphasis);
+    color: var(--code-method);
 }
 
-.highlight .na {
-    color: var(--bs-danger-text-emphasis);
-}
-
-/* XML-Tags (z. B. pom.xml), Variablen und Built-ins (Makefile, Shell) */
-.highlight .nt {
-    color: var(--bs-primary);
-}
-
-.highlight .nb,
 .highlight .nv,
-.highlight .vi {
-    color: var(--bs-info-text-emphasis);
+.highlight .vi,
+.highlight .vg,
+.highlight .vc {
+    color: var(--code-variable);
 }
 
-.highlight .ni,
-.highlight .no {
-    color: var(--bs-warning-text-emphasis);
+/* XML (pom.xml, SVG): Tags, Attribute, Werte als Strings */
+.highlight .nt,
+.highlight .cp {
+    color: var(--code-tag);
 }
 
-.highlight .o,
-.highlight .ow {
-    color: var(--bs-body-color);
+.lang-xml .na,
+.lang-html .na,
+.highlight .ni {
+    color: var(--code-attribute);
+}
+
+/* Schlüssel in .properties und .editorconfig, YAML und JSON */
+.lang-properties .na,
+.lang-ini .na,
+.lang-yaml .nt {
+    color: var(--code-keyword);
+}
+
+.lang-json .nt {
+    color: var(--code-variable);
+}
+
+/* Markdown */
+.highlight .gh,
+.highlight .gu {
+    color: var(--code-keyword);
+    font-weight: 700;
+}
+
+.highlight .ge {
+    font-style: italic;
+}
+
+.highlight .gs {
+    font-weight: 700;
 }
 
 /* Leere Zeilen behalten ihre volle Höhe. */

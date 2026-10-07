@@ -6,7 +6,7 @@ import os
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-SITE = ROOT / "_site"
+SITE = ROOT / ".github" / "pages" / ".tmp" / "_site"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=8000)

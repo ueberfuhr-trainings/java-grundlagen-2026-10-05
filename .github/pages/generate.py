@@ -29,7 +29,9 @@ ROOT = Path(subprocess.run(
   check=True,
 ).stdout.strip())
 PAGE_DIR = ROOT / ".github" / "pages"
-SITE = ROOT / "_site"
+# Downloads und erzeugte Seite; per .gitignore ausgeschlossen.
+TMP_DIR = PAGE_DIR / ".tmp"
+SITE = TMP_DIR / "_site"
 TEMPLATE = PAGE_DIR / "template.html"
 STYLE = PAGE_DIR / "style.css"
 SITE_JS = PAGE_DIR / "site.js"
@@ -40,8 +42,10 @@ REPO_NAME = REPO.split("/", 1)[1] if "/" in REPO else ROOT.name
 RUNNER_TEMP = Path(os.environ.get("RUNNER_TEMP", "/tmp"))
 PRS_FILE = RUNNER_TEMP / "prs.json"
 
-# Bootstrap wird heruntergeladen und nur mit passender Prüfsumme (SHA-256) verwendet.
-BOOTSTRAP_FILES = {
+# Fremddateien (Bootstrap, Schrift JetBrains Mono) werden heruntergeladen und
+# nur mit passender Prüfsumme (SHA-256) verwendet.
+JETBRAINS_MONO_URL = "https://cdn.jsdelivr.net/npm/@fontsource-variable/jetbrains-mono@5.3.0/files"
+VENDOR_FILES = {
   "bootstrap.min.css": (
     "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css",
     "d85327d99c7a3ee1f9b5d0500d1370acea3ad2db39c163c2f51f232baedbdede",
@@ -50,6 +54,14 @@ BOOTSTRAP_FILES = {
     "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
     "e4fd49181388c48ec5040bd3fe66f57c29c8e67fcd8502b3354b96ec7ab47cc7",
   ),
+  "jetbrains-mono-latin-wght-normal.woff2": (
+    f"{JETBRAINS_MONO_URL}/jetbrains-mono-latin-wght-normal.woff2",
+    "18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e",
+  ),
+  "jetbrains-mono-latin-wght-italic.woff2": (
+    f"{JETBRAINS_MONO_URL}/jetbrains-mono-latin-wght-italic.woff2",
+    "a8afa085e9ca5e53434e2ee918ba6b65c7dd4dda56509976b36591478c99d62e",
+  ),
 }
 
 SEARCH_EXTENSIONS = {".java"}
@@ -57,6 +69,8 @@ IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
 # Dateiendungen, die Pygments nicht von selbst erkennt.
 LEXER_OVERRIDES = {".svg": XmlLexer}
 README_NAMES = ("README.md", "README.MD", "README.markdown")
+# Darin werden Unterordner als Java-Packages angezeigt (de.schulung.java).
+JAVA_SOURCE_ROOTS = ("src/main/java", "src/test/java")
 
 LOCAL_PR_ID = "lokal"
 STATUS_LABELS = {"A": "hinzugefügt", "M": "geändert", "D": "gelöscht"}
@@ -386,6 +400,11 @@ def lexer_for(path: str):
     return TextLexer(stripnl=False)
 
 
+def code_classes(path: str) -> str:
+  """CSS-Klassen für Code, inklusive Sprache (z. B. lang-java, lang-xml)."""
+  return f"highlight lang-{lexer_for(path).aliases[0]}"
+
+
 def highlighted_lines(text: str | None, path: str) -> list[str]:
   """Hebt den Text hervor und liefert eine HTML-Zeile je Textzeile."""
   lines = text_lines(text)
@@ -468,6 +487,28 @@ def build_tree(paths: list[str]) -> dict:
   return root
 
 
+def in_java_source_root(path: str) -> bool:
+  return any(path.startswith(root + "/") for root in JAVA_SOURCE_ROOTS)
+
+
+def compact_directory(name: str, node: dict, path: str) -> tuple[str, dict, str]:
+  """Fasst Ordner zusammen, die nur genau einen Unterordner enthalten.
+
+  Aus src → main → java wird eine Zeile „src/main/java“, innerhalb eines
+  Java-Quellordners aus de → schulung → java das Package „de.schulung.java“.
+  Ein Quellordner selbst bleibt die Grenze, Packages hängen nie an ihm.
+  """
+  label = name
+  while path not in JAVA_SOURCE_ROOTS and len(node) == 1:
+    (child_name, child), = node.items()
+    if child is None:
+      break
+    label += ("." if in_java_source_root(path) else "/") + child_name
+    node = child
+    path += "/" + child_name
+  return label, node, path
+
+
 def render_tree(
   node: dict,
   version_url: str,
@@ -482,14 +523,15 @@ def render_tree(
 
   for index, name in enumerate(dirs):
     child_id = f"{tree_id}-{index}"
+    label, child, path = compact_directory(name, node[name], prefix + name)
 
     parts.append(
       '<div class="tree-item py-1">'
       f'<button class="btn btn-sm p-0 me-1" type="button" '
       f'data-tree-toggle="{esc(child_id)}" aria-expanded="true">▾</button>'
-      f'<span class="tree-dir">{esc(name)}</span>'
+      f'<span class="tree-dir">{esc(label)}</span>'
       f'<div id="{esc(child_id)}" class="tree-indent">'
-      f'{render_tree(node[name], version_url, child_id, marks, prefix + name + "/")}'
+      f'{render_tree(child, version_url, child_id, marks, path + "/")}'
       '</div>'
       '</div>'
     )
@@ -713,7 +755,7 @@ def render_overview(version: Version) -> str:
 <section class="card mb-4">
     <div class="card-header fw-semibold">pom.xml</div>
     <div class="card-body p-0 code-scroll">
-        <pre class="m-0 p-3 highlight"><code>{pom_code}</code></pre>
+        <pre class="m-0 p-3 {code_classes("pom.xml")}"><code>{pom_code}</code></pre>
     </div>
 </section>
 """
@@ -734,7 +776,7 @@ def render_code_table(path: str, text: str) -> str:
     f'<td class="code-line">{line}</td></tr>'
     for number, line in enumerate(highlighted_lines(text, path), 1)
   ]
-  return f'<table class="code-table highlight"><tbody>{"".join(rows)}</tbody></table>'
+  return f'<table class="code-table {code_classes(path)}"><tbody>{"".join(rows)}</tbody></table>'
 
 
 def render_diff_row(row: DiffRow) -> str:
@@ -749,7 +791,7 @@ def render_diff_row(row: DiffRow) -> str:
   )
 
 
-def render_diff_table(rows: list[DiffRow]) -> str:
+def render_diff_table(path: str, rows: list[DiffRow]) -> str:
   # Geänderte Zeilen samt Kontext; Lücken dazwischen werden als ⋯ angedeutet.
   shown = set()
   for index, row in enumerate(rows):
@@ -774,7 +816,7 @@ def render_diff_table(rows: list[DiffRow]) -> str:
       '</td></tr>'
     )
 
-  return f'<table class="code-table highlight"><tbody>{"".join(changes)}</tbody></table>'
+  return f'<table class="code-table {code_classes(path)}"><tbody>{"".join(changes)}</tbody></table>'
 
 
 def render_source(path: str, version: Version) -> str:
@@ -807,7 +849,7 @@ def render_source(path: str, version: Version) -> str:
     else:
       final = render_code_table(path, new_text)
     body = (
-      f'<div data-diff-view="changes">{render_diff_table(diff_rows(path, old_text, new_text))}</div>'
+      f'<div data-diff-view="changes">{render_diff_table(path, diff_rows(path, old_text, new_text))}</div>'
       f'<div data-diff-view="full" class="d-none">{final}</div>'
     )
     toggle = render_full_toggle("fileFullToggle")
@@ -880,9 +922,11 @@ def generate_version(version: Version, versions: list[Version]) -> None:
   write_search_index(version)
 
 
-def ensure_bootstrap() -> None:
-  for name, (url, checksum) in BOOTSTRAP_FILES.items():
-    path = PAGE_DIR / name
+def ensure_vendor_files() -> None:
+  TMP_DIR.mkdir(parents=True, exist_ok=True)
+
+  for name, (url, checksum) in VENDOR_FILES.items():
+    path = TMP_DIR / name
 
     if not path.exists():
       urllib.request.urlretrieve(url, path)
@@ -902,8 +946,8 @@ def copy_static_assets() -> None:
   assets = SITE / "assets"
   assets.mkdir(parents=True, exist_ok=True)
 
-  for name in BOOTSTRAP_FILES:
-    shutil.copy2(PAGE_DIR / name, assets / name)
+  for name in VENDOR_FILES:
+    shutil.copy2(TMP_DIR / name, assets / name)
 
 
 def main() -> None:
@@ -936,7 +980,7 @@ def main() -> None:
     os.environ["LOCAL_PREVIEW"] = "1"
 
   clean_site()
-  ensure_bootstrap()
+  ensure_vendor_files()
   copy_static_assets()
 
   versions = []

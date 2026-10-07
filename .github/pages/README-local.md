@@ -11,7 +11,7 @@ Die lokale Vorschau erzeugt **nur den aktuellen Stand** aus dem ausgecheckten Wo
 
 ```bash
 python .github/pages/generate.py --local
-python -m http.server 8000 --directory _site
+python -m http.server 8000 --directory .github/pages/.tmp/_site
 ```
 
 Dann im Browser öffnen:

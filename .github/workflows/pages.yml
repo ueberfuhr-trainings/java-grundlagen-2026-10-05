@@ -27,6 +27,9 @@ concurrency:
 
 jobs:
   build:
+    env:
+      # Hier legt generate.py die erzeugte Seite ab.
+      SITE_DIR: .github/pages/.tmp/_site
     # Ein gemergter PR löst ohnehin einen Push auf main aus.
     if: >-
       github.event_name != 'pull_request_target'
@@ -72,13 +75,13 @@ jobs:
 
       - name: Verify generated site
         run: |
-          test -f _site/index.html
-          test -f _site/style.css
-          test -f _site/site.js
-          test ! -f _site/prs.json
+          test -f "$SITE_DIR/index.html"
+          test -f "$SITE_DIR/style.css"
+          test -f "$SITE_DIR/site.js"
+          test ! -f "$SITE_DIR/prs.json"
 
           echo "Generated files:"
-          find _site -maxdepth 4 -type f | sort
+          find "$SITE_DIR" -maxdepth 4 -type f | sort
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
@@ -86,7 +89,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: _site
+          path: ${{ env.SITE_DIR }}
           # Seiten wie .editorconfig.html beginnen mit einem Punkt.
           include-hidden-files: true
 
