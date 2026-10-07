@@ -5,7 +5,6 @@
 /.github/
 /.idea/
 /.tools/
-/Makefile
 
 # Die README steht bereits auf der Übersichtsseite.
 /README.md
