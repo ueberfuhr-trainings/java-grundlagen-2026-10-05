@@ -12,6 +12,14 @@ public class Bibliotheksanwendung {
     buch2.titel = "Python für Einsteiger";
     buch2.autor = "Max";
 
+    Buch buch3 = new Buch();
+    buch3.isbn = "978-3-86680-100-0";
+    buch3.titel = "Java für Einsteiger";
+    buch3.autor = "Peter";
+
+    System.out.println(buch1 == buch3);
+    System.out.println(buch1.equals(buch3));
+
     System.out.println(buch1.autor);
     System.out.println(buch2.titel);
 
