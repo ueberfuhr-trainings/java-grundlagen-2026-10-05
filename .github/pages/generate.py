@@ -60,6 +60,8 @@ README_NAMES = ("README.md", "README.MD", "README.markdown")
 
 LOCAL_PR_ID = "lokal"
 STATUS_LABELS = {"A": "hinzugefügt", "M": "geändert", "D": "gelöscht"}
+# Unveränderte Zeilen vor und nach jeder Änderung, zur Orientierung.
+DIFF_CONTEXT_LINES = 5
 
 
 def run(*args: str, capture: bool = True) -> str:
@@ -748,15 +750,21 @@ def render_diff_row(row: DiffRow) -> str:
 
 
 def render_diff_table(rows: list[DiffRow]) -> str:
-  # Nur die geänderten Zeilen; Lücken dazwischen werden als ⋯ angedeutet.
+  # Geänderte Zeilen samt Kontext; Lücken dazwischen werden als ⋯ angedeutet.
+  shown = set()
+  for index, row in enumerate(rows):
+    if row.kind != "same":
+      shown.update(range(
+        max(0, index - DIFF_CONTEXT_LINES),
+        min(len(rows), index + DIFF_CONTEXT_LINES + 1),
+      ))
+
   changes = []
   previous = None
-  for index, row in enumerate(rows):
-    if row.kind == "same":
-      continue
+  for index in sorted(shown):
     if previous is not None and index != previous + 1:
       changes.append('<tr class="diff-gap"><td colspan="4">⋯</td></tr>')
-    changes.append(render_diff_row(row))
+    changes.append(render_diff_row(rows[index]))
     previous = index
 
   if not changes:
@@ -766,13 +774,7 @@ def render_diff_table(rows: list[DiffRow]) -> str:
       '</td></tr>'
     )
 
-  full = "".join(render_diff_row(row) for row in rows)
-  return f"""
-<table class="code-table highlight">
-    <tbody data-diff-view="changes">{"".join(changes)}</tbody>
-    <tbody data-diff-view="full" class="d-none">{full}</tbody>
-</table>
-"""
+  return f'<table class="code-table highlight"><tbody>{"".join(changes)}</tbody></table>'
 
 
 def render_source(path: str, version: Version) -> str:
@@ -799,7 +801,15 @@ def render_source(path: str, version: Version) -> str:
 
   toggle = ""
   if change and is_text:
-    body = render_diff_table(diff_rows(path, old_text, new_text))
+    # „Kompletter Stand“ zeigt die Datei nach der Änderung, ohne Diff.
+    if new_text is None:
+      final = '<div class="p-3 text-body-secondary">Die Datei wurde gelöscht.</div>'
+    else:
+      final = render_code_table(path, new_text)
+    body = (
+      f'<div data-diff-view="changes">{render_diff_table(diff_rows(path, old_text, new_text))}</div>'
+      f'<div data-diff-view="full" class="d-none">{final}</div>'
+    )
     toggle = render_full_toggle("fileFullToggle")
   elif change:
     body = (
