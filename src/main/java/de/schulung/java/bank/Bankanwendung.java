@@ -1,3 +1,5 @@
+package de.schulung.java.bank;
+
 import java.util.Arrays;
 
 public class Bankanwendung {
@@ -88,9 +90,9 @@ public class Bankanwendung {
       }
     }
 
-    System.out.println("Konten von Kunde 1:");
+    System.out.println("Konten von de.schulung.java.bank.Kunde 1:");
     System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde1)));
-    System.out.println("Konten von Kunde 2:");
+    System.out.println("Konten von de.schulung.java.bank.Kunde 2:");
     System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde2)));
 
   }

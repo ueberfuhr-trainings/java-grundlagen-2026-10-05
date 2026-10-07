@@ -1,3 +1,5 @@
+package de.schulung.java.bibliothek;
+
 public class Bibliotheksanwendung {
 
   public static void main(String[] args) {

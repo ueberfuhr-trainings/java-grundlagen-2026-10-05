@@ -1,3 +1,5 @@
+package de.schulung.java.bibliothek;
+
 import java.util.Objects;
 
 public class Buch {

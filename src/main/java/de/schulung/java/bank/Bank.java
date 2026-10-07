@@ -1,3 +1,5 @@
+package de.schulung.java.bank;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.UUID;
@@ -10,10 +12,10 @@ public class Bank {
 
   public void kundeAnlegen(Kunde kunde) {
 
-    // Prüfen, ob Kunde bereits vorhanden ist
+    // Prüfen, ob de.schulung.java.bank.Kunde bereits vorhanden ist
     for (Kunde existing : kunden) {
       if (existing == kunde) {
-        System.out.println("Fehler: Kunde ist bereits vorhanden.");
+        System.out.println("Fehler: de.schulung.java.bank.Kunde ist bereits vorhanden.");
         return;
       }
     }
@@ -22,7 +24,7 @@ public class Bank {
     kunde.nummer = UUID.randomUUID();
     // TODO: existiert UUID schon im Array?
 
-    // Kunde an Array anhängen
+    // de.schulung.java.bank.Kunde an Array anhängen
     kunden = Arrays.copyOf(kunden, kunden.length + 1);
     kunden[kunden.length - 1] = kunde;
 
@@ -30,10 +32,10 @@ public class Bank {
 
   void kontoAnlegen(Konto konto) {
 
-    // Prüfen, ob Konto bereits vorhanden ist
+    // Prüfen, ob de.schulung.java.bank.Konto bereits vorhanden ist
     for (Konto existing : konten) {
       if (existing == konto) {
-        System.out.println("Fehler: Konto ist bereits vorhanden.");
+        System.out.println("Fehler: de.schulung.java.bank.Konto ist bereits vorhanden.");
         return;
       }
     }
@@ -42,7 +44,7 @@ public class Bank {
     konto.iban = randomIban();
     // TODO: existiert IBAN schon im Array?
 
-    // Konto an Array anhängen
+    // de.schulung.java.bank.Konto an Array anhängen
     konten = Arrays.copyOf(konten, konten.length + 1);
     konten[konten.length - 1] = konto;
 
@@ -65,7 +67,7 @@ public class Bank {
         return konto;
       }
     }
-    return null; // Konto nicht gefunden
+    return null; // de.schulung.java.bank.Konto nicht gefunden
   }
 
   Konto[] findeKontenNachKunde(Kunde kunde) {

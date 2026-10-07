@@ -1,3 +1,5 @@
+package de.schulung.java.bank;
+
 import java.util.Objects;
 
 public class Konto {
@@ -33,7 +35,7 @@ public class Konto {
 
   @Override
   public String toString() {
-    return "Konto{" +
+    return "de.schulung.java.bank.Konto{" +
       "iban='" + iban + '\'' +
       ", stand=" + stand +
       '}';

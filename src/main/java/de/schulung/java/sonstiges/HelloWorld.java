@@ -1,3 +1,5 @@
+package de.schulung.java.sonstiges;
+
 public class HelloWorld {
 
   public static void main(String[] args) {
