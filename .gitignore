@@ -39,3 +39,4 @@ build/
 .DS_Store
 
 _site/**
+/.tools/plantuml.jar
