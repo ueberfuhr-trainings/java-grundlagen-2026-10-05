@@ -4,7 +4,6 @@ import argparse
 import html
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -58,7 +57,6 @@ EXCLUDED_NAMES = {
   "README.MD",
   "README.markdown",
   "merged-prs.json",
-  ".pages-main-source",
   ".DS_Store",
 }
 
@@ -132,14 +130,6 @@ def clean_site() -> None:
 
 def is_hidden(path: Path) -> bool:
   if any(part in EXCLUDED_NAMES for part in path.parts):
-    return True
-
-  # TODO: Snapshots außerhalb von ROOT anlegen
-  if any(
-    part == ".pages-main-source" or
-    re.fullmatch(r"\.pages-pr-\d+-source", part)
-    for part in path.parts
-  ):
     return True
 
   if os.environ.get("LOCAL_PREVIEW") == "1":
@@ -586,23 +576,38 @@ def download(url: str, target: Path) -> None:
     target.write_bytes(response.read())
 
 
-def ensure_bootstrap(local: bool) -> None:
-  css = SITE / "assets" / "bootstrap.min.css"
-  js = SITE / "assets" / "bootstrap.bundle.min.js"
+def ensure_bootstrap() -> None:
+  css_path = PAGE_DIR / "bootstrap.min.css"
+  js_path = PAGE_DIR / "bootstrap.bundle.min.js"
 
-  if local:
-    if not css.exists():
-      download(BOOTSTRAP_CSS_URL, css)
-    if not js.exists():
-      download(BOOTSTRAP_JS_URL, js)
+  if not css_path.exists():
+    urllib.request.urlretrieve(
+      BOOTSTRAP_CSS_URL,
+      css_path,
+    )
 
-  if not css.exists() or not js.exists():
-    raise RuntimeError("Bootstrap assets missing. GitHub Actions must download them after generation.")
+  if not js_path.exists():
+    urllib.request.urlretrieve(
+      BOOTSTRAP_JS_URL,
+      js_path,
+    )
 
 
 def copy_static_assets() -> None:
   write(SITE / "style.css", safe_read(STYLE))
   write(SITE / "site.js", safe_read(SITE_JS))
+
+  assets = SITE / "assets"
+  assets.mkdir(parents=True, exist_ok=True)
+
+  shutil.copy2(
+    PAGE_DIR / "bootstrap.min.css",
+    assets / "bootstrap.min.css",
+  )
+  shutil.copy2(
+    PAGE_DIR / "bootstrap.bundle.min.js",
+    assets / "bootstrap.bundle.min.js",
+  )
 
 
 def main() -> None:
@@ -627,35 +632,40 @@ def main() -> None:
     os.environ["LOCAL_PREVIEW"] = "1"
 
   clean_site()
+  ensure_bootstrap()
   copy_static_assets()
 
   if local:
     generate_version(ROOT, "main")
-    ensure_bootstrap(local=True)
     print(f"Generated local preview in {SITE}")
     return
 
   main_commit = git("rev-parse", "HEAD")
-  main_source = ROOT / ".pages-main-source"
+  main_source = RUNNER_TEMP / "pages-main-source"
+
   if main_source.exists():
     shutil.rmtree(main_source)
+
   snapshot(main_commit, main_source)
+
   try:
     generate_version(main_source, "main")
 
     for pr in load_prs():
-      source = ROOT / f".pages-pr-{pr['number']}-source"
+      source = RUNNER_TEMP / f"pages-pr-{pr['number']}-source"
+
       if source.exists():
         shutil.rmtree(source)
+
       snapshot(pr["sha"], source)
+
       try:
         generate_version(source, "pr", pr)
       finally:
         shutil.rmtree(source, ignore_errors=True)
+
   finally:
     shutil.rmtree(main_source, ignore_errors=True)
-
-  # ensure_bootstrap(local=False)
 
   if (SITE / "merged-prs.json").exists():
     raise RuntimeError("merged-prs.json must never be published")

@@ -47,23 +47,11 @@ jobs:
       - name: Generate site
         run: python .github/pages/generate.py --with-prs
 
-      - name: Download Bootstrap
-        run: |
-          mkdir -p _site/assets
-          curl --fail --location \
-            https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css \
-            --output _site/assets/bootstrap.min.css
-          curl --fail --location \
-            https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js \
-            --output _site/assets/bootstrap.bundle.min.js
-
       - name: Verify generated site
         run: |
           test -f _site/index.html
           test -f _site/style.css
           test -f _site/site.js
-          test -f _site/assets/bootstrap.min.css
-          test -f _site/assets/bootstrap.bundle.min.js
           test ! -f _site/merged-prs.json
 
           echo "Generated files:"
