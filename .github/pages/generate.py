@@ -58,6 +58,7 @@ EXCLUDED_NAMES = {
   "README.MD",
   "README.markdown",
   "merged-prs.json",
+  ".pages-main-source",
   ".DS_Store",
 }
 
@@ -131,6 +132,14 @@ def clean_site() -> None:
 
 def is_hidden(path: Path) -> bool:
   if any(part in EXCLUDED_NAMES for part in path.parts):
+    return True
+
+  # TODO: Snapshots außerhalb von ROOT anlegen
+  if any(
+    part == ".pages-main-source" or
+    re.fullmatch(r"\.pages-pr-\d+-source", part)
+    for part in path.parts
+  ):
     return True
 
   if os.environ.get("LOCAL_PREVIEW") == "1":
@@ -287,14 +296,14 @@ def render_search_box() -> str:
 """
 
 
-def render_sidebar(version_url: str) -> str:
+def render_sidebar(source_root: Path, version_url: str) -> str:
   return f"""
 <div class="sidebar-content">
     {render_version_selector(version_url)}
     {render_search_box()}
     <div class="card">
         <div class="card-header fw-semibold">Projektstruktur</div>
-        <div class="card-body p-2">{render_tree(ROOT, version_url)}</div>
+        <div class="card-body p-2">{render_tree(source_root, version_url)}</div>
     </div>
 </div>
 """
@@ -377,8 +386,13 @@ def render_search_modal() -> str:
 """
 
 
-def render_shell(title: str, version_url: str, main_content: str) -> str:
-  sidebar = render_sidebar(version_url)
+def render_shell(
+  title: str,
+  source_root: Path,
+  version_url: str,
+  main_content: str,
+) -> str:
+  sidebar = render_sidebar(source_root, version_url)
   body = f"""
 <div class="app-shell d-flex flex-column">
     <header class="project-header py-3 px-3 px-lg-4">
@@ -454,7 +468,7 @@ def render_overview(source_root: Path, version_url: str, kind: str, pr=None) -> 
 {pom_html}
 {f'<section class="card"><div class="card-header fw-semibold">README</div><div class="card-body">{readme_html}</div></section>' if readme_html else ''}
 """
-  return render_shell(title, version_url, content)
+  return render_shell(title, source_root, version_url, content)
 
 
 def render_source(path: Path, source_root: Path, version_url: str) -> str:
@@ -487,7 +501,7 @@ def render_source(path: Path, source_root: Path, version_url: str) -> str:
     </div>
 </div>
 """
-  return render_shell(title, version_url, content)
+  return render_shell(title, source_root, version_url, content)
 
 
 def write_search_index(source_root: Path, version_url: str) -> None:
