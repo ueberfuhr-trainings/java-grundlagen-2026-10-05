@@ -237,7 +237,22 @@
             }
         };
 
+        // Gesucht wird erst ab zwei Zeichen; bis dahin ist der Button gesperrt.
+        const buttons = document.querySelectorAll("[data-open-search]");
+        const searchable = () => input.value.trim().length >= 2;
+        const updateButtons = () => {
+            buttons.forEach(button => { button.disabled = !searchable(); });
+        };
+
+        const open = () => {
+            if (!searchable()) return;
+            modal.show();
+            setTimeout(() => input.focus(), 150);
+            render();
+        };
+
         input.addEventListener("input", () => {
+            updateButtons();
             clearTimeout(timer);
             timer = setTimeout(render, 150);
         });
@@ -245,18 +260,18 @@
         input.addEventListener("keydown", event => {
             if (event.key === "Escape") {
                 modal.hide();
+            } else if (event.key === "Enter") {
+                event.preventDefault();
+                open();
             }
         });
 
-        const open = () => {
-            modal.show();
-            setTimeout(() => input.focus(), 150);
-            render();
-        };
-
-        document.querySelectorAll("[data-open-search]").forEach(button => {
+        buttons.forEach(button => {
             button.addEventListener("click", open);
         });
+
+        // Der Browser kann beim Zurückblättern einen Suchbegriff wiederherstellen.
+        updateButtons();
     }
 
     initTheme();

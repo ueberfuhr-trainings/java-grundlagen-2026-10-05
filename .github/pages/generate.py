@@ -568,7 +568,7 @@ def render_search_box() -> str:
     <div class="input-group">
         <input id="searchInput" class="form-control" type="search"
                placeholder="Java-Dateien durchsuchen …" autocomplete="off">
-        <button class="btn btn-primary" type="button" data-open-search>
+        <button class="btn btn-primary" type="button" data-open-search disabled>
             Suchen
         </button>
     </div>
