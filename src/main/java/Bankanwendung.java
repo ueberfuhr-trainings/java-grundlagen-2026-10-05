@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class Bankanwendung {
 
   public static void main(String[] args) {
@@ -30,9 +32,12 @@ public class Bankanwendung {
     kunde3.wohnort.plz = "20095";
     kunde3.wohnort.ort = "Hamburg";
 
-    // bank.kundeAnlegen(kunde1);
-    // bank.kundeAnlegen(kunde2);
-    // bank.kundeAnlegen(kunde3);
+    bank.kundeAnlegen(kunde1);
+    bank.kundeAnlegen(kunde1);
+    bank.kundeAnlegen(kunde2);
+    bank.kundeAnlegen(kunde3);
+
+    System.out.println(kunde1.nummer);
 
     // Konten
 
@@ -48,9 +53,12 @@ public class Bankanwendung {
     konto3.stand = 320000; // 3.200,00 €
     konto3.inhaber = kunde2;
 
-    // bank.kontoAnlegen(konto1);
-    // bank.kontoAnlegen(konto2);
-    // bank.kontoAnlegen(konto3);
+    System.out.println(konto1.getStand());
+    System.out.println(konto2.getStand());
+
+    bank.kontoAnlegen(konto1);
+    bank.kontoAnlegen(konto2);
+    bank.kontoAnlegen(konto3);
 
     // Vergleich
 
@@ -79,6 +87,11 @@ public class Bankanwendung {
         }
       }
     }
+
+    System.out.println("Konten von Kunde 1:");
+    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde1)));
+    System.out.println("Konten von Kunde 2:");
+    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde2)));
 
   }
 

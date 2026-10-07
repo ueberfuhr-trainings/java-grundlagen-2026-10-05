@@ -13,4 +13,29 @@ public class Konto {
     return Objects.equals(iban, konto.iban);
   }
 
+  long getStand() {
+    return this.stand;
+  }
+
+  long einzahlen(long betrag) {
+    this.stand = this.stand + betrag;
+    return this.stand;
+  }
+
+  long auszahlen(long betrag) {
+    if (this.stand < betrag) {
+      System.out.println("Fehler: Kontostand zu niedrig. Auszahlung nicht möglich.");
+      return this.stand;
+    }
+    this.stand = this.stand - betrag;
+    return this.stand;
+  }
+
+  @Override
+  public String toString() {
+    return "Konto{" +
+      "iban='" + iban + '\'' +
+      ", stand=" + stand +
+      '}';
+  }
 }
