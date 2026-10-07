@@ -640,7 +640,7 @@ def main() -> None:
   finally:
     shutil.rmtree(main_source, ignore_errors=True)
 
-  ensure_bootstrap(local=False)
+  # ensure_bootstrap(local=False)
 
   if (SITE / "merged-prs.json").exists():
     raise RuntimeError("merged-prs.json must never be published")
