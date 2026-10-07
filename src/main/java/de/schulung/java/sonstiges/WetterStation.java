@@ -1,3 +1,5 @@
+package de.schulung.java.sonstiges;
+
 public class WetterStation {
 
   public static void main(String[] args) {

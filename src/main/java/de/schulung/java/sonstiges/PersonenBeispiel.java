@@ -1,3 +1,5 @@
+package de.schulung.java.sonstiges;
+
 public class PersonenBeispiel {
 
 

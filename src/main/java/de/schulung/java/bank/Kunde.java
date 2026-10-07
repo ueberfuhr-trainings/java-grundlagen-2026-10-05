@@ -1,3 +1,5 @@
+package de.schulung.java.bank;
+
 import java.util.Objects;
 import java.util.UUID;
 

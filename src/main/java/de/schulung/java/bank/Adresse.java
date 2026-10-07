@@ -1,3 +1,5 @@
+package de.schulung.java.bank;
+
 public class Adresse {
 
   String straße;
