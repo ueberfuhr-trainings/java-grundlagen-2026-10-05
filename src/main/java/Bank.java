@@ -10,7 +10,7 @@ public class Bank {
 
   public void kundeAnlegen(Kunde kunde) {
 
-    // Prüfen, ob Objekt bereits vorhanden ist
+    // Prüfen, ob Kunde bereits vorhanden ist
     for (Kunde existing : kunden) {
       if (existing == kunde) {
         System.out.println("Fehler: Kunde ist bereits vorhanden.");
@@ -28,7 +28,25 @@ public class Bank {
 
   }
 
-  //  TODO: Konto anlegen
+  void kontoAnlegen(Konto konto) {
+
+    // Prüfen, ob Konto bereits vorhanden ist
+    for (Konto existing : konten) {
+      if (existing == konto) {
+        System.out.println("Fehler: Konto ist bereits vorhanden.");
+        return;
+      }
+    }
+
+    // Kontonummer generieren
+    konto.iban = randomIban();
+    // TODO: existiert IBAN schon im Array?
+
+    // Konto an Array anhängen
+    konten = Arrays.copyOf(konten, konten.length + 1);
+    konten[konten.length - 1] = konto;
+
+  }
 
 
   // Aufbau: DE + 2 Prüfziffern + 8-stellige BLZ + 10-stellige Kontonummer
@@ -41,8 +59,25 @@ public class Bank {
     return "DE" + String.format("%02d", prüfziffern) + bban;
   }
 
-  // TODO: Konto finden nach IBAN
-  // TODO: Konten eines Kunden ermitteln
+  Konto findeKontoNachIban(String iban) {
+    for (Konto konto : konten) {
+      if (konto.iban.equals(iban)) {
+        return konto;
+      }
+    }
+    return null; // Konto nicht gefunden
+  }
 
+  Konto[] findeKontenNachKunde(Kunde kunde) {
+    Konto[] gefundeneKonten = new Konto[konten.length];
+    int gefunden = 0;
+    for (Konto konto : konten) {
+      if (konto.inhaber.nummer.equals(kunde.nummer)) {
+        gefundeneKonten[gefunden] = konto;
+        gefunden++;
+      }
+    }
+    return Arrays.copyOf(gefundeneKonten, gefunden);
+  }
 
 }

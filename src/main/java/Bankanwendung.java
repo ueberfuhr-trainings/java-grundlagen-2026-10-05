@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class Bankanwendung {
 
   public static void main(String[] args) {
@@ -54,9 +56,9 @@ public class Bankanwendung {
     System.out.println(konto1.getStand());
     System.out.println(konto2.getStand());
 
-    // bank.kontoAnlegen(konto1);
-    // bank.kontoAnlegen(konto2);
-    // bank.kontoAnlegen(konto3);
+    bank.kontoAnlegen(konto1);
+    bank.kontoAnlegen(konto2);
+    bank.kontoAnlegen(konto3);
 
     // Vergleich
 
@@ -85,6 +87,11 @@ public class Bankanwendung {
         }
       }
     }
+
+    System.out.println("Konten von Kunde 1:");
+    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde1)));
+    System.out.println("Konten von Kunde 2:");
+    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde2)));
 
   }
 

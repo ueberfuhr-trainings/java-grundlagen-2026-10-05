@@ -31,4 +31,11 @@ public class Konto {
     return this.stand;
   }
 
+  @Override
+  public String toString() {
+    return "Konto{" +
+      "iban='" + iban + '\'' +
+      ", stand=" + stand +
+      '}';
+  }
 }
