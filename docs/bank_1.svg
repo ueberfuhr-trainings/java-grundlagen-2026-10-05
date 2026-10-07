@@ -1,1 +1,177 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="CLASS" style="width:462px;height:550px;background:#FFFFFF;" width="462px" height="550px" viewBox="0 0 462 550" zoomAndPan="magnify" preserveAspectRatio="none" contentStyleType="text/css"><?plantuml 1.2026.8?><defs/><g font-family="sans-serif" lengthAdjust="spacing"><!--class de.schulung.java.bank.Bank--><g class="entity" data-qualified-name="de.schulung.java.bank.Bank" id="ent0001" data-source-line="2"><rect x="112.9" y="7" width="242.084" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/><ellipse cx="213.364" cy="23" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/><path d="M215.838,29.143 Q215.256,29.442 214.617,29.591 Q213.978,29.741 213.273,29.741 Q210.766,29.741 209.446,28.089 Q208.126,26.437 208.126,23.316 Q208.126,20.187 209.446,18.535 Q210.766,16.883 213.273,16.883 Q213.978,16.883 214.626,17.032 Q215.273,17.182 215.838,17.48 L215.838,20.203 Q215.207,19.622 214.613,19.352 Q214.02,19.083 213.389,19.083 Q212.044,19.083 211.359,20.149 Q210.674,21.216 210.674,23.316 Q210.674,25.408 211.359,26.474 Q212.044,27.541 213.389,27.541 Q214.02,27.541 214.613,27.271 Q215.207,27.001 215.838,26.42 Z " fill="#000"/><text x="233.864" y="28.291" fill="#000" font-size="14" textLength="32.655">de.schulung.java.bank.Bank</text><line x1="113.9" y1="39" x2="353.984" y2="39" style="stroke:#181818;stroke-width:0.5;"/><line x1="113.9" y1="47" x2="353.984" y2="47" style="stroke:#181818;stroke-width:0.5;"/><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="123.9" cy="60.744" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="132.9" y="64.535" fill="#000" font-size="14" textLength="216.084">sucheKonto(iban: String): de.schulung.java.bank.Konto</text><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="123.9" cy="77.232" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="132.9" y="81.023" fill="#000" font-size="14" textLength="200.847">kundeAnlegen(kunde: de.schulung.java.bank.Kunde)</text><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="123.9" cy="93.721" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="132.9" y="97.512" fill="#000" font-size="14" textLength="192.254">kontoAnlegen(konto: de.schulung.java.bank.Konto)</text><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="123.9" cy="110.209" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="132.9" y="114" fill="#000" font-size="14" textLength="150.261" text-decoration="underline">ibanErzeugen(): String</text></g><!--class de.schulung.java.bank.Kunde--><g class="entity" data-qualified-name="de.schulung.java.bank.Kunde" id="ent0002" data-source-line="9"><rect x="7" y="197.96" width="255.886" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/><ellipse cx="109.129" cy="213.96" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/><path d="M111.602,220.103 Q111.021,220.402 110.382,220.551 Q109.743,220.701 109.037,220.701 Q106.53,220.701 105.21,219.049 Q103.891,217.397 103.891,214.276 Q103.891,211.147 105.21,209.495 Q106.53,207.843 109.037,207.843 Q109.743,207.843 110.39,207.992 Q111.038,208.142 111.602,208.44 L111.602,211.163 Q110.971,210.582 110.378,210.312 Q109.784,210.043 109.153,210.043 Q107.809,210.043 107.124,211.109 Q106.439,212.176 106.439,214.276 Q106.439,216.368 107.124,217.434 Q107.809,218.501 109.153,218.501 Q109.784,218.501 110.378,218.231 Q110.971,217.961 111.602,217.38 Z " fill="#000"/><text x="129.629" y="219.251" fill="#000" font-size="14" textLength="43.128">de.schulung.java.bank.Kunde</text><line x1="8" y1="229.96" x2="261.886" y2="229.96" style="stroke:#181818;stroke-width:0.5;"/><g data-visibility-modifier="PRIVATE_FIELD"><rect x="15" y="240.704" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="27" y="247.495" fill="#000" font-size="14" textLength="99.825">nummer: UUID</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="15" y="257.192" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="27" y="263.983" fill="#000" font-size="14" textLength="86.119">name: String</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="15" y="273.681" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="27" y="280.472" fill="#000" font-size="14" textLength="119.26">wohnort: de.schulung.java.bank.Adresse</text><line x1="8" y1="287.425" x2="261.886" y2="287.425" style="stroke:#181818;stroke-width:1;"/><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="18" cy="301.169" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="27" y="304.96" fill="#000" font-size="14" textLength="229.886">wohnortÄndern(adresse: de.schulung.java.bank.Adresse)</text></g><!--class de.schulung.java.bank.Konto--><g class="entity" data-qualified-name="de.schulung.java.bank.Konto" id="ent0003" data-source-line="17"><rect x="218.78" y="388.91" width="228.33" height="146.93" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/><ellipse cx="308.563" cy="404.91" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/><path d="M311.036,411.053 Q310.455,411.352 309.816,411.501 Q309.177,411.651 308.471,411.651 Q305.965,411.651 304.645,409.999 Q303.325,408.347 303.325,405.226 Q303.325,402.097 304.645,400.445 Q305.965,398.793 308.471,398.793 Q309.177,398.793 309.824,398.942 Q310.472,399.092 311.036,399.39 L311.036,402.113 Q310.405,401.532 309.812,401.262 Q309.218,400.993 308.588,400.993 Q307.243,400.993 306.558,402.059 Q305.873,403.126 305.873,405.226 Q305.873,407.318 306.558,408.384 Q307.243,409.451 308.588,409.451 Q309.218,409.451 309.812,409.181 Q310.405,408.911 311.036,408.33 Z " fill="#000"/><text x="329.063" y="410.201" fill="#000" font-size="14" textLength="40.264">de.schulung.java.bank.Konto</text><line x1="219.78" y1="420.91" x2="446.11" y2="420.91" style="stroke:#181818;stroke-width:0.5;"/><g data-visibility-modifier="PRIVATE_FIELD"><rect x="226.78" y="431.654" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="238.78" y="438.445" fill="#000" font-size="14" textLength="78.107">iban: String</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="226.78" y="448.142" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="238.78" y="454.933" fill="#000" font-size="14" textLength="121.276">stand: Geldbetrag</text><text x="238.78" y="471.422" fill="#000" font-size="14" textLength="86.68">{stand >= 0}</text><line x1="219.78" y1="478.375" x2="446.11" y2="478.375" style="stroke:#181818;stroke-width:1;"/><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="229.78" cy="492.119" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="238.78" y="495.91" fill="#000" font-size="14" textLength="202.33">einzahlen(betrag: Geldbetrag)</text><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="229.78" cy="508.607" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="238.78" y="512.398" fill="#000" font-size="14" textLength="195.146">abheben(betrag: Geldbetrag)</text><g data-visibility-modifier="PUBLIC_METHOD"><ellipse cx="229.78" cy="525.096" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/></g><text x="238.78" y="528.887" fill="#000" font-size="14" textLength="152.551">getStand(): Geldbetrag</text></g><!--class de.schulung.java.bank.Adresse--><g class="entity" data-qualified-name="de.schulung.java.bank.Adresse" id="ent0004" data-source-line="27"><rect x="19.88" y="405.4" width="164.12" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/><ellipse cx="70.654" cy="421.4" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/><path d="M73.127,427.543 Q72.546,427.842 71.907,427.991 Q71.268,428.141 70.562,428.141 Q68.055,428.141 66.735,426.489 Q65.416,424.837 65.416,421.716 Q65.416,418.587 66.735,416.935 Q68.055,415.283 70.562,415.283 Q71.268,415.283 71.915,415.432 Q72.563,415.582 73.127,415.88 L73.127,418.603 Q72.496,418.022 71.903,417.752 Q71.309,417.483 70.678,417.483 Q69.334,417.483 68.649,418.549 Q67.964,419.616 67.964,421.716 Q67.964,423.808 68.649,424.874 Q69.334,425.941 70.678,425.941 Q71.309,425.941 71.903,425.671 Q72.496,425.401 73.127,424.82 Z " fill="#000"/><text x="91.154" y="426.691" fill="#000" font-size="14" textLength="54.072">de.schulung.java.bank.Adresse</text><line x1="20.88" y1="437.4" x2="183" y2="437.4" style="stroke:#181818;stroke-width:0.5;"/><g data-visibility-modifier="PRIVATE_FIELD"><rect x="27.88" y="448.144" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="39.88" y="454.935" fill="#000" font-size="14" textLength="90.836">straße: String</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="27.88" y="464.632" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="39.88" y="471.423" fill="#000" font-size="14" textLength="138.12">hausnummer: String</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="27.88" y="481.121" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="39.88" y="487.912" fill="#000" font-size="14" textLength="72.495">PLZ: String</text><g data-visibility-modifier="PRIVATE_FIELD"><rect x="27.88" y="497.609" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/></g><text x="39.88" y="504.4" fill="#000" font-size="14" textLength="68.394">ort: String</text><line x1="20.88" y1="511.353" x2="183" y2="511.353" style="stroke:#181818;stroke-width:0.5;"/></g><!--link de.schulung.java.bank.Bank to de.schulung.java.bank.Kunde--><g class="link" data-entity-1="ent0001" data-entity-2="ent0002" id="lnk5" data-source-line="34" data-link-type="dependency"><path d="M204.37,121.42 C191.78,145.45 179.44,169.001 166.85,193.031" style="stroke:#181818;stroke-width:1;" fill="none" id="de.schulung.java.bank.Bank-to-de.schulung.java.bank.Kunde" codeLine="34"/><polygon points="164.53,197.46,172.25,191.344,166.85,193.031,165.164,187.632,164.53,197.46" fill="#181818" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="188.41" y="164.528" fill="#000" font-size="13" textLength="35.839">kennt</text><text x="192.501" y="141.515" fill="#000" font-size="13">1</text><text x="144.839" y="187.128" fill="#000" font-size="13" textLength="22.712">0..*</text></g><!--link de.schulung.java.bank.Bank to de.schulung.java.bank.Konto--><g class="link" data-entity-1="ent0001" data-entity-2="ent0003" id="lnk6" data-source-line="35" data-link-type="dependency"><path d="M255.34,121.4 C263.74,144.86 273.01,172.5 279.94,197.96 C297.28,261.65 310.782,330.486 320.162,383.726" style="stroke:#181818;stroke-width:1;" fill="none" id="de.schulung.java.bank.Bank-to-de.schulung.java.bank.Konto" codeLine="35"/><polygon points="321.03,388.65,323.408,379.092,320.162,383.726,315.529,380.481,321.03,388.65" fill="#181818" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="307.03" y="259.998" fill="#000" font-size="13" textLength="35.839">kennt</text><text x="249.364" y="141.493" fill="#000" font-size="13">1</text><text x="296.809" y="378.238" fill="#000" font-size="13" textLength="22.712">0..*</text></g><!--reverse link de.schulung.java.bank.Kunde to de.schulung.java.bank.Konto--><g class="link" data-entity-1="ent0002" data-entity-2="ent0003" id="lnk7" data-source-line="36" data-link-type="dependency"><path d="M192.78,315.94 C215.45,339.46 238.59,363.48 262.71,388.51" style="stroke:#181818;stroke-width:1;" fill="none" id="de.schulung.java.bank.Kunde-backto-de.schulung.java.bank.Konto" codeLine="36"/><polygon points="189.31,312.34,192.676,321.596,192.78,315.94,198.436,316.044,189.31,312.34" fill="#181818" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="234.94" y="355.478" fill="#000" font-size="13" textLength="42.986">besitzt</text><text x="187.146" y="332.431" fill="#000" font-size="13">1</text><text x="232.748" y="378.084" fill="#000" font-size="13" textLength="22.712">0..*</text></g><!--link de.schulung.java.bank.Kunde to de.schulung.java.bank.Adresse--><g class="link" data-entity-1="ent0002" data-entity-2="ent0004" id="lnk8" data-source-line="37" data-link-type="composition"><path d="M123.98,324.189 C119.35,353.059 116.414,371.303 111.774,400.153" style="stroke:#181818;stroke-width:1;" fill="none" id="de.schulung.java.bank.Kunde-de.schulung.java.bank.Adresse" codeLine="37"/><polygon points="125.88,312.34,120.98,317.631,123.98,324.189,128.879,318.898,125.88,312.34" fill="#181818" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><polygon points="110.98,405.09,116.358,396.839,111.774,400.153,108.46,395.569,110.98,405.09" fill="#181818" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="121.42" y="355.478" fill="#000" font-size="13" textLength="20.109">hat</text><text x="116.382" y="332.431" fill="#000" font-size="13">1</text><text x="103.608" y="394.781" fill="#000" font-size="13">1</text></g><?plantuml-src VL9DQuD04BtxAmPFcc18hqiRI6affJqKGYwzhJgeg2FihXGCtle_-cFonxfVMXD2lUY-UJFlpLkpXai9ZvngE0MWdxNiinBVEb9TLAMS61oKgAY86LZGaUgUSjnJWmLIP0-wR5wnhnlgN3S7t-xg9wcugh8HraRYMGpO6s8yYGLZ46JMcHtghINKjoqA1iVZwvD7U8jpaqM-kf8weHZiSu5IeaCJPyiNpzzwgA28EyhCZHUwnkoakyp18Te_vGnUiCbJL88NyrgKm-u1jkE5BbOqyBBHAphsijCdnjCIq_y81Qg36MzIMkZEZlqEasUfg-UVgt1Atiifn2N-yVvv2TW4_-x2_X_XNQWNsa6utMnMeRyP1ZKIgTiCc-74S7n3kK-IQqgAibB3ahIoW_J7j1U3aglW5m00?></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"
+     data-diagram-type="CLASS" style="width:462px;height:550px;background:#FFFFFF;" width="462px" height="550px"
+     viewBox="0 0 462 550" zoomAndPan="magnify" preserveAspectRatio="none"
+     contentStyleType="text/css"><?plantuml 1.2026.8?>
+  <defs/>
+  <g font-family="sans-serif" lengthAdjust="spacing"><!--class de.schulung.java.bank.Bank-->
+    <g class="entity" data-qualified-name="de.schulung.java.bank.Bank" id="ent0001" data-source-line="2">
+      <rect x="112.9" y="7" width="242.084" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"
+            rx="2.5" ry="2.5"/>
+      <ellipse cx="213.364" cy="23" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/>
+      <path
+        d="M215.838,29.143 Q215.256,29.442 214.617,29.591 Q213.978,29.741 213.273,29.741 Q210.766,29.741 209.446,28.089 Q208.126,26.437 208.126,23.316 Q208.126,20.187 209.446,18.535 Q210.766,16.883 213.273,16.883 Q213.978,16.883 214.626,17.032 Q215.273,17.182 215.838,17.48 L215.838,20.203 Q215.207,19.622 214.613,19.352 Q214.02,19.083 213.389,19.083 Q212.044,19.083 211.359,20.149 Q210.674,21.216 210.674,23.316 Q210.674,25.408 211.359,26.474 Q212.044,27.541 213.389,27.541 Q214.02,27.541 214.613,27.271 Q215.207,27.001 215.838,26.42 Z "
+        fill="#000"/>
+      <text x="233.864" y="28.291" fill="#000" font-size="14" textLength="32.655">de.schulung.java.bank.Bank</text>
+      <line x1="113.9" y1="39" x2="353.984" y2="39" style="stroke:#181818;stroke-width:0.5;"/>
+      <line x1="113.9" y1="47" x2="353.984" y2="47" style="stroke:#181818;stroke-width:0.5;"/>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="123.9" cy="60.744" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="132.9" y="64.535" fill="#000" font-size="14" textLength="216.084">sucheKonto(iban:
+        String): de.schulung.java.bank.Konto
+      </text>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="123.9" cy="77.232" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="132.9" y="81.023" fill="#000" font-size="14" textLength="200.847">kundeAnlegen(kunde:
+        de.schulung.java.bank.Kunde)
+      </text>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="123.9" cy="93.721" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="132.9" y="97.512" fill="#000" font-size="14" textLength="192.254">kontoAnlegen(konto:
+        de.schulung.java.bank.Konto)
+      </text>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="123.9" cy="110.209" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="132.9" y="114" fill="#000" font-size="14" textLength="150.261" text-decoration="underline">
+        ibanErzeugen(): String
+      </text>
+    </g><!--class de.schulung.java.bank.Kunde-->
+    <g class="entity" data-qualified-name="de.schulung.java.bank.Kunde" id="ent0002" data-source-line="9">
+      <rect x="7" y="197.96" width="255.886" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"
+            rx="2.5" ry="2.5"/>
+      <ellipse cx="109.129" cy="213.96" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/>
+      <path
+        d="M111.602,220.103 Q111.021,220.402 110.382,220.551 Q109.743,220.701 109.037,220.701 Q106.53,220.701 105.21,219.049 Q103.891,217.397 103.891,214.276 Q103.891,211.147 105.21,209.495 Q106.53,207.843 109.037,207.843 Q109.743,207.843 110.39,207.992 Q111.038,208.142 111.602,208.44 L111.602,211.163 Q110.971,210.582 110.378,210.312 Q109.784,210.043 109.153,210.043 Q107.809,210.043 107.124,211.109 Q106.439,212.176 106.439,214.276 Q106.439,216.368 107.124,217.434 Q107.809,218.501 109.153,218.501 Q109.784,218.501 110.378,218.231 Q110.971,217.961 111.602,217.38 Z "
+        fill="#000"/>
+      <text x="129.629" y="219.251" fill="#000" font-size="14" textLength="43.128">de.schulung.java.bank.Kunde</text>
+      <line x1="8" y1="229.96" x2="261.886" y2="229.96" style="stroke:#181818;stroke-width:0.5;"/>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="15" y="240.704" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="27" y="247.495" fill="#000" font-size="14" textLength="99.825">nummer: UUID</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="15" y="257.192" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="27" y="263.983" fill="#000" font-size="14" textLength="86.119">name: String</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="15" y="273.681" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="27" y="280.472" fill="#000" font-size="14" textLength="119.26">wohnort:
+        de.schulung.java.bank.Adresse
+      </text>
+      <line x1="8" y1="287.425" x2="261.886" y2="287.425" style="stroke:#181818;stroke-width:1;"/>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="18" cy="301.169" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="27" y="304.96" fill="#000" font-size="14" textLength="229.886">wohnortÄndern(adresse:
+        de.schulung.java.bank.Adresse)
+      </text>
+    </g><!--class de.schulung.java.bank.Konto-->
+    <g class="entity" data-qualified-name="de.schulung.java.bank.Konto" id="ent0003" data-source-line="17">
+      <rect x="218.78" y="388.91" width="228.33" height="146.93" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"
+            rx="2.5" ry="2.5"/>
+      <ellipse cx="308.563" cy="404.91" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/>
+      <path
+        d="M311.036,411.053 Q310.455,411.352 309.816,411.501 Q309.177,411.651 308.471,411.651 Q305.965,411.651 304.645,409.999 Q303.325,408.347 303.325,405.226 Q303.325,402.097 304.645,400.445 Q305.965,398.793 308.471,398.793 Q309.177,398.793 309.824,398.942 Q310.472,399.092 311.036,399.39 L311.036,402.113 Q310.405,401.532 309.812,401.262 Q309.218,400.993 308.588,400.993 Q307.243,400.993 306.558,402.059 Q305.873,403.126 305.873,405.226 Q305.873,407.318 306.558,408.384 Q307.243,409.451 308.588,409.451 Q309.218,409.451 309.812,409.181 Q310.405,408.911 311.036,408.33 Z "
+        fill="#000"/>
+      <text x="329.063" y="410.201" fill="#000" font-size="14" textLength="40.264">de.schulung.java.bank.Konto</text>
+      <line x1="219.78" y1="420.91" x2="446.11" y2="420.91" style="stroke:#181818;stroke-width:0.5;"/>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="226.78" y="431.654" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="238.78" y="438.445" fill="#000" font-size="14" textLength="78.107">iban: String</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="226.78" y="448.142" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="238.78" y="454.933" fill="#000" font-size="14" textLength="121.276">stand: Geldbetrag</text>
+      <text x="238.78" y="471.422" fill="#000" font-size="14" textLength="86.68">{stand >= 0}</text>
+      <line x1="219.78" y1="478.375" x2="446.11" y2="478.375" style="stroke:#181818;stroke-width:1;"/>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="229.78" cy="492.119" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="238.78" y="495.91" fill="#000" font-size="14" textLength="202.33">einzahlen(betrag: Geldbetrag)</text>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="229.78" cy="508.607" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="238.78" y="512.398" fill="#000" font-size="14" textLength="195.146">abheben(betrag: Geldbetrag)</text>
+      <g data-visibility-modifier="PUBLIC_METHOD">
+        <ellipse cx="229.78" cy="525.096" rx="3" ry="3" fill="#84BE84" style="stroke:#038048;stroke-width:1;"/>
+      </g>
+      <text x="238.78" y="528.887" fill="#000" font-size="14" textLength="152.551">getStand(): Geldbetrag</text>
+    </g><!--class de.schulung.java.bank.Adresse-->
+    <g class="entity" data-qualified-name="de.schulung.java.bank.Adresse" id="ent0004" data-source-line="27">
+      <rect x="19.88" y="405.4" width="164.12" height="113.953" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"
+            rx="2.5" ry="2.5"/>
+      <ellipse cx="70.654" cy="421.4" rx="11" ry="11" fill="#ADD1B2" style="stroke:#181818;stroke-width:1;"/>
+      <path
+        d="M73.127,427.543 Q72.546,427.842 71.907,427.991 Q71.268,428.141 70.562,428.141 Q68.055,428.141 66.735,426.489 Q65.416,424.837 65.416,421.716 Q65.416,418.587 66.735,416.935 Q68.055,415.283 70.562,415.283 Q71.268,415.283 71.915,415.432 Q72.563,415.582 73.127,415.88 L73.127,418.603 Q72.496,418.022 71.903,417.752 Q71.309,417.483 70.678,417.483 Q69.334,417.483 68.649,418.549 Q67.964,419.616 67.964,421.716 Q67.964,423.808 68.649,424.874 Q69.334,425.941 70.678,425.941 Q71.309,425.941 71.903,425.671 Q72.496,425.401 73.127,424.82 Z "
+        fill="#000"/>
+      <text x="91.154" y="426.691" fill="#000" font-size="14" textLength="54.072">de.schulung.java.bank.Adresse</text>
+      <line x1="20.88" y1="437.4" x2="183" y2="437.4" style="stroke:#181818;stroke-width:0.5;"/>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="27.88" y="448.144" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="39.88" y="454.935" fill="#000" font-size="14" textLength="90.836">straße: String</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="27.88" y="464.632" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="39.88" y="471.423" fill="#000" font-size="14" textLength="138.12">hausnummer: String</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="27.88" y="481.121" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="39.88" y="487.912" fill="#000" font-size="14" textLength="72.495">PLZ: String</text>
+      <g data-visibility-modifier="PRIVATE_FIELD">
+        <rect x="27.88" y="497.609" width="6" height="6" fill="none" style="stroke:#C82930;stroke-width:1;"/>
+      </g>
+      <text x="39.88" y="504.4" fill="#000" font-size="14" textLength="68.394">ort: String</text>
+      <line x1="20.88" y1="511.353" x2="183" y2="511.353" style="stroke:#181818;stroke-width:0.5;"/>
+    </g><!--link de.schulung.java.bank.Bank to de.schulung.java.bank.Kunde-->
+    <g class="link" data-entity-1="ent0001" data-entity-2="ent0002" id="lnk5" data-source-line="34"
+       data-link-type="dependency">
+      <path d="M204.37,121.42 C191.78,145.45 179.44,169.001 166.85,193.031" style="stroke:#181818;stroke-width:1;"
+            fill="none" id="de.schulung.java.bank.Bank-to-de.schulung.java.bank.Kunde" codeLine="34"/>
+      <polygon points="164.53,197.46,172.25,191.344,166.85,193.031,165.164,187.632,164.53,197.46" fill="#181818"
+               style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+      <text x="188.41" y="164.528" fill="#000" font-size="13" textLength="35.839">kennt</text>
+      <text x="192.501" y="141.515" fill="#000" font-size="13">1</text>
+      <text x="144.839" y="187.128" fill="#000" font-size="13" textLength="22.712">0..*</text>
+    </g><!--link de.schulung.java.bank.Bank to de.schulung.java.bank.Konto-->
+    <g class="link" data-entity-1="ent0001" data-entity-2="ent0003" id="lnk6" data-source-line="35"
+       data-link-type="dependency">
+      <path d="M255.34,121.4 C263.74,144.86 273.01,172.5 279.94,197.96 C297.28,261.65 310.782,330.486 320.162,383.726"
+            style="stroke:#181818;stroke-width:1;" fill="none"
+            id="de.schulung.java.bank.Bank-to-de.schulung.java.bank.Konto" codeLine="35"/>
+      <polygon points="321.03,388.65,323.408,379.092,320.162,383.726,315.529,380.481,321.03,388.65" fill="#181818"
+               style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+      <text x="307.03" y="259.998" fill="#000" font-size="13" textLength="35.839">kennt</text>
+      <text x="249.364" y="141.493" fill="#000" font-size="13">1</text>
+      <text x="296.809" y="378.238" fill="#000" font-size="13" textLength="22.712">0..*</text>
+    </g><!--reverse link de.schulung.java.bank.Kunde to de.schulung.java.bank.Konto-->
+    <g class="link" data-entity-1="ent0002" data-entity-2="ent0003" id="lnk7" data-source-line="36"
+       data-link-type="dependency">
+      <path d="M192.78,315.94 C215.45,339.46 238.59,363.48 262.71,388.51" style="stroke:#181818;stroke-width:1;"
+            fill="none" id="de.schulung.java.bank.Kunde-backto-de.schulung.java.bank.Konto" codeLine="36"/>
+      <polygon points="189.31,312.34,192.676,321.596,192.78,315.94,198.436,316.044,189.31,312.34" fill="#181818"
+               style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+      <text x="234.94" y="355.478" fill="#000" font-size="13" textLength="42.986">besitzt</text>
+      <text x="187.146" y="332.431" fill="#000" font-size="13">1</text>
+      <text x="232.748" y="378.084" fill="#000" font-size="13" textLength="22.712">0..*</text>
+    </g><!--link de.schulung.java.bank.Kunde to de.schulung.java.bank.Adresse-->
+    <g class="link" data-entity-1="ent0002" data-entity-2="ent0004" id="lnk8" data-source-line="37"
+       data-link-type="composition">
+      <path d="M123.98,324.189 C119.35,353.059 116.414,371.303 111.774,400.153" style="stroke:#181818;stroke-width:1;"
+            fill="none" id="de.schulung.java.bank.Kunde-de.schulung.java.bank.Adresse" codeLine="37"/>
+      <polygon points="125.88,312.34,120.98,317.631,123.98,324.189,128.879,318.898,125.88,312.34" fill="#181818"
+               style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+      <polygon points="110.98,405.09,116.358,396.839,111.774,400.153,108.46,395.569,110.98,405.09" fill="#181818"
+               style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+      <text x="121.42" y="355.478" fill="#000" font-size="13" textLength="20.109">hat</text>
+      <text x="116.382" y="332.431" fill="#000" font-size="13">1</text>
+      <text x="103.608" y="394.781" fill="#000" font-size="13">1</text>
+    </g>
+    <?plantuml-src VL9DQuD04BtxAmPFcc18hqiRI6affJqKGYwzhJgeg2FihXGCtle_-cFonxfVMXD2lUY-UJFlpLkpXai9ZvngE0MWdxNiinBVEb9TLAMS61oKgAY86LZGaUgUSjnJWmLIP0-wR5wnhnlgN3S7t-xg9wcugh8HraRYMGpO6s8yYGLZ46JMcHtghINKjoqA1iVZwvD7U8jpaqM-kf8weHZiSu5IeaCJPyiNpzzwgA28EyhCZHUwnkoakyp18Te_vGnUiCbJL88NyrgKm-u1jkE5BbOqyBBHAphsijCdnjCIq_y81Qg36MzIMkZEZlqEasUfg-UVgt1Atiifn2N-yVvv2TW4_-x2_X_XNQWNsa6utMnMeRyP1ZKIgTiCc-74S7n3kK-IQqgAibB3ahIoW_J7j1U3aglW5m00?>
+  </g>
+</svg>
