@@ -227,7 +227,12 @@ def highlighted_code(text: str, path: Path) -> str:
   )
 
 
-def render_tree(path: Path, version_url: str, tree_id: str = "root") -> str:
+def render_tree(
+  path: Path,
+  source_root: Path,
+  version_url: str,
+  tree_id: str = "root",
+) -> str:
   dirs = []
   files = []
 
@@ -239,9 +244,8 @@ def render_tree(path: Path, version_url: str, tree_id: str = "root") -> str:
   for child in children:
     if is_hidden(child):
       continue
+
     if child.is_dir():
-      if child.name == ".git":
-        continue
       dirs.append(child)
     elif child.name == "pom.xml" or is_source(child):
       files.append(child)
@@ -250,27 +254,22 @@ def render_tree(path: Path, version_url: str, tree_id: str = "root") -> str:
 
   for index, directory in enumerate(dirs):
     child_id = f"{tree_id}-{index}"
-    href = (
-      version_url
-      + "/".join(directory.relative_to(path.parent).parts)
-      + "/index.html"
-    )
-    # Directory links are intentionally not navigational; the button controls collapse.
+
     parts.append(
       '<div class="tree-item py-1">'
       f'<button class="btn btn-sm p-0 me-1" type="button" '
       f'data-tree-toggle="{esc(child_id)}" aria-expanded="true">▾</button>'
       f'<span class="tree-dir">{esc(directory.name)}</span>'
       f'<div id="{esc(child_id)}" class="tree-indent">'
-      f'{render_tree(directory, version_url, child_id)}'
+      f'{render_tree(directory, source_root, version_url, child_id)}'
       '</div>'
       '</div>'
     )
 
   for file in files:
-    relative = file.relative_to(ROOT).as_posix()
-    href = version_url + relative
-    href = href.rsplit("/", 1)[0] + "/" + Path(relative).name + ".html"
+    relative = file.relative_to(source_root).as_posix()
+    href = version_url + relative + ".html"
+
     parts.append(
       '<div class="tree-item py-1 ps-4">'
       f'<a class="tree-link" href="{esc(href)}">{esc(file.name)}</a>'
@@ -303,7 +302,7 @@ def render_sidebar(source_root: Path, version_url: str) -> str:
     {render_search_box()}
     <div class="card">
         <div class="card-header fw-semibold">Projektstruktur</div>
-        <div class="card-body p-2">{render_tree(source_root, version_url)}</div>
+        <div class="card-body p-2">{render_tree(source_root, source_root, version_url)}</div>
     </div>
 </div>
 """
@@ -393,6 +392,7 @@ def render_shell(
   main_content: str,
 ) -> str:
   sidebar = render_sidebar(source_root, version_url)
+
   body = f"""
 <div class="app-shell d-flex flex-column">
     <header class="project-header py-3 px-3 px-lg-4">
@@ -424,6 +424,7 @@ def render_shell(
 
 {render_search_modal()}
 """
+
   return render_page(title, body, version_url)
 
 
