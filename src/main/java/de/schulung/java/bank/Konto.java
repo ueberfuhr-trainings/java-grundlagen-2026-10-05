@@ -4,9 +4,25 @@ import java.util.Objects;
 
 public class Konto {
 
-  String iban;
-  long stand; // in Cent, stand >= 0
-  Kunde inhaber;
+  private String iban;
+  private long stand; // in Cent, stand >= 0
+  private final Kunde inhaber;
+
+  public Konto(Kunde inhaber) {
+    this.inhaber = inhaber;
+  }
+
+  public String getIban() {
+    return iban;
+  }
+
+  public void setIban(String iban) {
+    this.iban = iban;
+  }
+
+  public Kunde getInhaber() {
+    return inhaber;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -15,16 +31,16 @@ public class Konto {
     return Objects.equals(iban, konto.iban);
   }
 
-  long getStand() {
+  public long getStand() {
     return this.stand;
   }
 
-  long einzahlen(long betrag) {
+  public long einzahlen(long betrag) {
     this.stand = this.stand + betrag;
     return this.stand;
   }
 
-  long auszahlen(long betrag) {
+  public long auszahlen(long betrag) {
     if (this.stand < betrag) {
       System.out.println("Fehler: Kontostand zu niedrig. Auszahlung nicht möglich.");
       return this.stand;

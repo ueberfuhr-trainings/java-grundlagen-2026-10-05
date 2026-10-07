@@ -6,9 +6,16 @@ import java.util.UUID;
 
 public class Bank {
 
-  Kunde[] kunden = new Kunde[0];
-  Konto[] konten = new Konto[0];
+  private Kunde[] kunden = new Kunde[0];
+  private Konto[] konten = new Konto[0];
 
+  public Kunde[] getKunden() {
+    return kunden;
+  }
+
+  public Konto[] getKonten() {
+    return konten;
+  }
 
   public void kundeAnlegen(Kunde kunde) {
 
@@ -21,7 +28,7 @@ public class Bank {
     }
 
     // Kundennummer generieren
-    kunde.nummer = UUID.randomUUID();
+    kunde.setNummer(UUID.randomUUID());
     // TODO: existiert UUID schon im Array?
 
     // de.schulung.java.bank.Kunde an Array anhängen
@@ -30,7 +37,7 @@ public class Bank {
 
   }
 
-  void kontoAnlegen(Konto konto) {
+  public void kontoAnlegen(Konto konto) {
 
     // Prüfen, ob de.schulung.java.bank.Konto bereits vorhanden ist
     for (Konto existing : konten) {
@@ -41,7 +48,7 @@ public class Bank {
     }
 
     // Kontonummer generieren
-    konto.iban = randomIban();
+    konto.setIban(randomIban());
     // TODO: existiert IBAN schon im Array?
 
     // de.schulung.java.bank.Konto an Array anhängen
@@ -61,20 +68,20 @@ public class Bank {
     return "DE" + String.format("%02d", prüfziffern) + bban;
   }
 
-  Konto findeKontoNachIban(String iban) {
+  public Konto findeKontoNachIban(String iban) {
     for (Konto konto : konten) {
-      if (konto.iban.equals(iban)) {
+      if (konto.getIban().equals(iban)) {
         return konto;
       }
     }
     return null; // de.schulung.java.bank.Konto nicht gefunden
   }
 
-  Konto[] findeKontenNachKunde(Kunde kunde) {
+  public Konto[] findeKontenNachKunde(Kunde kunde) {
     Konto[] gefundeneKonten = new Konto[konten.length];
     int gefunden = 0;
     for (Konto konto : konten) {
-      if (konto.inhaber.nummer.equals(kunde.nummer)) {
+      if (konto.getInhaber().getNummer().equals(kunde.getNummer())) {
         gefundeneKonten[gefunden] = konto;
         gefunden++;
       }
