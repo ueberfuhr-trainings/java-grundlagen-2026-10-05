@@ -220,9 +220,101 @@ body.sidebar-resizing * {
     color: var(--bs-danger-text-emphasis);
 }
 
+/* XML-Tags (z. B. pom.xml), Variablen und Built-ins (Makefile, Shell) */
+.highlight .nt {
+    color: var(--bs-primary);
+}
+
+.highlight .nb,
+.highlight .nv,
+.highlight .vi {
+    color: var(--bs-info-text-emphasis);
+}
+
+.highlight .ni,
+.highlight .no {
+    color: var(--bs-warning-text-emphasis);
+}
+
 .highlight .o,
 .highlight .ow {
     color: var(--bs-body-color);
+}
+
+/* Leere Zeilen behalten ihre volle Höhe. */
+.code-line:empty::after {
+    content: " ";
+}
+
+/* Änderungsansicht bei PRs */
+.diff-marker {
+    width: 1%;
+    padding: .08rem .4rem;
+    text-align: center;
+    user-select: none;
+}
+
+.diff-add td {
+    background: var(--bs-success-bg-subtle);
+}
+
+.diff-del td {
+    background: var(--bs-danger-bg-subtle);
+}
+
+.diff-add .diff-marker {
+    color: var(--bs-success-text-emphasis);
+}
+
+.diff-del .diff-marker {
+    color: var(--bs-danger-text-emphasis);
+}
+
+.diff-gap td {
+    padding: .1rem 1rem;
+    color: var(--bs-secondary-color);
+    background: var(--project-code-bg);
+    text-align: center;
+    user-select: none;
+}
+
+.tree-status,
+.file-status {
+    display: inline-block;
+    margin-left: .4rem;
+    padding: 0 .3rem;
+    border-radius: .25rem;
+    font-family: var(--bs-font-monospace);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.tree-status-A,
+.file-status-A {
+    color: var(--bs-success-text-emphasis);
+    background: var(--bs-success-bg-subtle);
+}
+
+.tree-status-M,
+.file-status-M {
+    color: var(--bs-warning-text-emphasis);
+    background: var(--bs-warning-bg-subtle);
+}
+
+.tree-status-D,
+.file-status-D {
+    color: var(--bs-danger-text-emphasis);
+    background: var(--bs-danger-bg-subtle);
+}
+
+.image-preview {
+    border-bottom: 1px solid var(--project-border);
+    background: var(--bs-white);
+}
+
+.image-preview img {
+    max-width: 100%;
+    height: auto;
 }
 
 .search-modal .modal-dialog {

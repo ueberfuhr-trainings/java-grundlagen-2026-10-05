@@ -4,6 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>__TITLE__</title>
+    <script>
+        // Theme vor dem ersten Rendern setzen, damit nichts hell aufblitzt:
+        // gespeicherte Wahl, sonst die Systemeinstellung.
+        (() => {
+            let theme = null;
+            try { theme = localStorage.getItem("project-theme"); } catch (_) {}
+            if (theme !== "dark" && theme !== "light") {
+                theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        })();
+    </script>
     <link rel="stylesheet" href="__SITE_BASE__assets/bootstrap.min.css">
     <link rel="stylesheet" href="__SITE_BASE__style.css">
 </head>

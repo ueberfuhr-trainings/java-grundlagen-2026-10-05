@@ -1,0 +1,10 @@
+# Dateien und Ordner, die in der Pages-Ansicht nicht erscheinen.
+# Syntax wie .gitignore, Pfade relativ zum Wurzelverzeichnis des Repos.
+# Was .gitignore ausschließt, fehlt ohnehin.
+
+/.github/
+/.idea/
+/.tools/
+
+# Die README steht bereits auf der Übersichtsseite.
+/README.md

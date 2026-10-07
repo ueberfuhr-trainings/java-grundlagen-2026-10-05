@@ -1,94 +1,65 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import hashlib
 import html
 import json
 import os
 import shutil
 import subprocess
-import sys
 import urllib.request
-from pathlib import Path
+from dataclasses import dataclass, field
+from pathlib import Path, PurePosixPath
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
-from pygments.lexers import (
-  JavaLexer,
-  JsonLexer,
-  MarkdownLexer,
-  PropertiesLexer,
-  TextLexer,
-  XmlLexer,
-  YamlLexer,
-)
+from pygments.lexers import TextLexer, XmlLexer, get_lexer_for_filename
+from pygments.util import ClassNotFound
 
 try:
   import markdown
 except ImportError:
   markdown = None
 
-ROOT = Path.cwd()
+# Wurzel des Repos, unabhängig vom Verzeichnis, aus dem aufgerufen wird.
+ROOT = Path(subprocess.run(
+  ["git", "rev-parse", "--show-toplevel"],
+  text=True,
+  capture_output=True,
+  check=True,
+).stdout.strip())
 PAGE_DIR = ROOT / ".github" / "pages"
 SITE = ROOT / "_site"
 TEMPLATE = PAGE_DIR / "template.html"
 STYLE = PAGE_DIR / "style.css"
 SITE_JS = PAGE_DIR / "site.js"
+PAGES_IGNORE = PAGE_DIR / ".pages-ignore"
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 REPO_NAME = REPO.split("/", 1)[1] if "/" in REPO else ROOT.name
 RUNNER_TEMP = Path(os.environ.get("RUNNER_TEMP", "/tmp"))
-MERGED_PRS_FILE = RUNNER_TEMP / "merged-prs.json"
+PRS_FILE = RUNNER_TEMP / "prs.json"
 
-BOOTSTRAP_CSS_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-BOOTSTRAP_JS_URL = "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-
-SOURCE_EXTENSIONS = {
-  ".java", ".xml", ".yml", ".yaml", ".properties",
-  ".md", ".txt", ".json", ".gradle", ".kts",
+# Bootstrap wird heruntergeladen und nur mit passender Prüfsumme (SHA-256) verwendet.
+BOOTSTRAP_FILES = {
+  "bootstrap.min.css": (
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css",
+    "d85327d99c7a3ee1f9b5d0500d1370acea3ad2db39c163c2f51f232baedbdede",
+  ),
+  "bootstrap.bundle.min.js": (
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js",
+    "e4fd49181388c48ec5040bd3fe66f57c29c8e67fcd8502b3354b96ec7ab47cc7",
+  ),
 }
+
 SEARCH_EXTENSIONS = {".java"}
+IMAGE_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"}
+# Dateiendungen, die Pygments nicht von selbst erkennt.
+LEXER_OVERRIDES = {".svg": XmlLexer}
+README_NAMES = ("README.md", "README.MD", "README.markdown")
 
-EXCLUDED_NAMES = {
-  ".git",
-  ".github",
-  "_site",
-  ".idea",
-  "target",
-  "README.md",
-  "README.MD",
-  "README.markdown",
-  "merged-prs.json",
-  ".DS_Store",
-}
-
-_gitignore_cache: dict[str, bool] = {}
-
-
-def is_gitignored(path: Path) -> bool:
-  try:
-    relative = path.relative_to(ROOT).as_posix()
-  except ValueError:
-    return False
-
-  if relative in _gitignore_cache:
-    return _gitignore_cache[relative]
-
-  result = subprocess.run(
-    [
-      "git",
-      "check-ignore",
-      "--no-index",
-      "-q",
-      "--",
-      relative,
-    ],
-    cwd=ROOT,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-  )
-
-  ignored = result.returncode == 0
-  _gitignore_cache[relative] = ignored
-  return ignored
+LOCAL_PR_ID = "lokal"
+STATUS_LABELS = {"A": "hinzugefügt", "M": "geändert", "D": "gelöscht"}
 
 
 def run(*args: str, capture: bool = True) -> str:
@@ -104,6 +75,19 @@ def run(*args: str, capture: bool = True) -> str:
 
 def git(*args: str) -> str:
   return run("git", *args)
+
+
+def git_bytes(*args: str) -> bytes:
+  return subprocess.run(
+    ["git", *args],
+    cwd=ROOT,
+    capture_output=True,
+    check=True,
+  ).stdout
+
+
+def split_nul(data: bytes) -> list[str]:
+  return [item.decode("utf-8") for item in data.split(b"\0") if item]
 
 
 def esc(value: object) -> str:
@@ -122,44 +106,172 @@ def write(path: Path, content: str) -> None:
   path.write_text(content, encoding="utf-8")
 
 
+def write_bytes(path: Path, content: bytes) -> None:
+  path.parent.mkdir(parents=True, exist_ok=True)
+  path.write_bytes(content)
+
+
 def clean_site() -> None:
   if SITE.exists():
     shutil.rmtree(SITE)
   SITE.mkdir(parents=True)
 
 
-def is_hidden(path: Path) -> bool:
-  if any(part in EXCLUDED_NAMES for part in path.parts):
-    return True
+# ---------------------------------------------------------------------------
+# Sichtbarkeit: .gitignore und .pages-ignore
+# ---------------------------------------------------------------------------
 
-  if os.environ.get("LOCAL_PREVIEW") == "1":
-    return is_gitignored(path)
-
-  return False
+_ignore_cache: dict[str, bool] = {}
 
 
-def iter_visible_paths(source_root: Path):
-  for current, dirs, files in os.walk(source_root):
-    current_path = Path(current)
+def visible(paths: list[str]) -> list[str]:
+  """Entfernt alle Pfade, die .gitignore oder .pages-ignore ausschließen.
 
-    dirs[:] = [
-      name
-      for name in dirs
-      if not is_hidden(current_path / name)
-    ]
+  Git wertet beide Dateien selbst aus: .pages-ignore wird als
+  core.excludesFile übergeben, die Pfade darin gelten daher relativ
+  zum Wurzelverzeichnis – mit derselben Syntax wie .gitignore.
+  """
+  unknown = [path for path in paths if path not in _ignore_cache]
 
-    for name in files:
-      path = current_path / name
-      if not is_hidden(path):
-        yield path
+  if unknown:
+    excludes = PAGES_IGNORE if PAGES_IGNORE.exists() else Path(os.devnull)
+    result = subprocess.run(
+      [
+        "git",
+        "-c",
+        f"core.excludesFile={excludes}",
+        "check-ignore",
+        "--no-index",
+        "--stdin",
+        "-z",
+      ],
+      cwd=ROOT,
+      input="\0".join(unknown).encode("utf-8") + b"\0",
+      capture_output=True,
+    )
+    # Exit-Code 1 bedeutet: keiner der Pfade wird ignoriert.
+    if result.returncode not in (0, 1):
+      raise RuntimeError(result.stderr.decode("utf-8", errors="replace"))
+
+    ignored = set(split_nul(result.stdout))
+    for path in unknown:
+      _ignore_cache[path] = path in ignored
+
+  return [path for path in paths if not _ignore_cache[path]]
 
 
-def is_source(path: Path) -> bool:
-  return path.is_file() and not is_hidden(path) and path.suffix.lower() in SOURCE_EXTENSIONS
+# ---------------------------------------------------------------------------
+# Projektstände
+# ---------------------------------------------------------------------------
+
+class Source:
+  """Ein Projektstand: welche Dateien es gibt und was in ihnen steht.
+
+  Die Basisklasse ist ein leerer Stand, z. B. vor dem ersten Commit.
+  """
+
+  def __init__(self) -> None:
+    self._all: list[str] | None = None
+    self._visible: list[str] | None = None
+    self._contents: dict[str, bytes] = {}
+
+  def all_paths(self) -> list[str]:
+    if self._all is None:
+      self._all = sorted(set(self._list()))
+    return self._all
+
+  def paths(self) -> list[str]:
+    if self._visible is None:
+      self._visible = visible(self.all_paths())
+    return self._visible
+
+  def read(self, path: str) -> bytes:
+    if path not in self._contents:
+      self._contents[path] = self._load(path)
+    return self._contents[path]
+
+  def _list(self) -> list[str]:
+    return []
+
+  def _load(self, path: str) -> bytes:
+    raise KeyError(path)
 
 
-def is_searchable(path: Path) -> bool:
-  return path.is_file() and not is_hidden(path) and path.suffix.lower() in SEARCH_EXTENSIONS
+class WorkTree(Source):
+  """Das Arbeitsverzeichnis inklusive noch nicht committeter Dateien."""
+
+  def _list(self) -> list[str]:
+    files = split_nul(git_bytes(
+      "ls-files", "-z", "--cached", "--others", "--exclude-standard",
+    ))
+    return [path for path in files if (ROOT / path).is_file()]
+
+  def _load(self, path: str) -> bytes:
+    return (ROOT / path).read_bytes()
+
+
+class CommitTree(Source):
+  """Der Stand eines Commits, direkt aus Git gelesen."""
+
+  def __init__(self, commit: str) -> None:
+    super().__init__()
+    self.commit = commit
+
+  def _list(self) -> list[str]:
+    paths = []
+    # Format je Eintrag: "<mode> <type> <object>\t<path>"
+    for entry in split_nul(git_bytes("ls-tree", "-r", "-z", self.commit)):
+      meta, path = entry.split("\t", 1)
+      if meta.split(" ")[1] == "blob":
+        paths.append(path)
+    return paths
+
+  def _load(self, path: str) -> bytes:
+    return git_bytes("cat-file", "blob", f"{self.commit}:{path}")
+
+
+@dataclass
+class Change:
+  status: str  # "A", "M" oder "D"
+  old: bytes | None
+  new: bytes | None
+
+
+def compute_changes(base: Source, target: Source) -> dict[str, Change]:
+  old_paths = set(base.paths())
+  new_paths = set(target.paths())
+  candidates = sorted(old_paths | new_paths)
+
+  # Zwischen zwei Commits kennt Git die geänderten Pfade schon.
+  if isinstance(base, CommitTree) and isinstance(target, CommitTree):
+    changed = set(split_nul(git_bytes(
+      "diff", "--name-only", "--no-renames", "-z", base.commit, target.commit,
+    )))
+    candidates = [path for path in candidates if path in changed]
+
+  changes = {}
+  for path in candidates:
+    old = base.read(path) if path in old_paths else None
+    new = target.read(path) if path in new_paths else None
+    if old == new:
+      continue
+    status = "A" if old is None else "D" if new is None else "M"
+    changes[path] = Change(status, old, new)
+
+  return changes
+
+
+@dataclass
+class Version:
+  label: str
+  title: str
+  intro: str
+  url: str
+  destination: Path
+  source: Source
+  # None: kein PR, also auch keine Änderungsansicht.
+  changes: dict[str, Change] | None = None
+  sidebar: str = field(default="", repr=False)
 
 
 def site_base() -> str:
@@ -169,14 +281,158 @@ def site_base() -> str:
   return "/" + REPO_NAME.strip("/") + "/"
 
 
-def version_base(kind: str, number: int | None = None) -> str:
-  base = site_base()
-  if kind == "main":
-    return base
-  if kind == "pr":
-    return f"{base}pr/{number}/"
-  raise ValueError(kind)
+def main_version(source: Source) -> Version:
+  return Version(
+    label="Aktueller Stand",
+    title="Maven-Projekt",
+    intro="Aktueller Stand aus dem ausgecheckten Branch.",
+    url=site_base(),
+    destination=SITE,
+    source=source,
+  )
 
+
+def pr_version(pr_id: object, label: str, intro: str, base: Source, target: Source) -> Version:
+  return Version(
+    label=label,
+    title=label,
+    intro=intro,
+    url=f"{site_base()}pr/{pr_id}/",
+    destination=SITE / "pr" / str(pr_id),
+    source=target,
+    changes=compute_changes(base, target),
+  )
+
+
+def resolve_commit(revision: str) -> str | None:
+  result = subprocess.run(
+    ["git", "rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}"],
+    cwd=ROOT,
+    text=True,
+    capture_output=True,
+  )
+  return result.stdout.strip() if result.returncode == 0 else None
+
+
+def count_rebased_copies(merged: str, head: str) -> int:
+  """Zählt, wie viele Commits auf main Kopien der PR-Commits sind.
+
+  Beim Rebase-Merge legt GitHub jeden PR-Commit neu auf main ab: Autor,
+  Autorzeit und Betreffzeile bleiben erhalten, die Commit-IDs nicht.
+  Beide Historien werden daher rückwärts verglichen, bis sie sich
+  unterscheiden oder in einen gemeinsamen Commit münden.
+  """
+  log_format = "--format=%H%x09%ae%x09%at%x09%s"
+  merged_log = git("log", "--first-parent", "-n200", log_format, merged).splitlines()
+  head_log = git("log", "--first-parent", "-n200", log_format, head).splitlines()
+
+  count = 0
+  for merged_line, head_line in zip(merged_log, head_log):
+    merged_sha, merged_meta = merged_line.split("\t", 1)
+    head_sha, head_meta = head_line.split("\t", 1)
+    if merged_sha == head_sha or merged_meta != head_meta:
+      break
+    count += 1
+  return count
+
+
+def merged_pr_base(pr: dict) -> str | None:
+  """Der Stand von main direkt vor dem Merge des PRs."""
+  parents = git("rev-list", "--parents", "-n", "1", pr["sha"]).split()[1:]
+
+  # Merge-Commit: Der erste Elternteil ist main vor dem Merge.
+  if len(parents) != 1:
+    return parents[0] if parents else None
+
+  # Ein Elternteil: Squash-Merge (ein Commit) oder Rebase-Merge (n Commits).
+  # Den Vergleich ermöglicht der Original-Stand des PRs (refs/pull/<n>/head).
+  if pr["head"] and resolve_commit(pr["head"]):
+    copies = count_rebased_copies(pr["sha"], pr["head"])
+    if copies > 1:
+      return resolve_commit(f"{pr['sha']}~{copies}")
+  return parents[0]
+
+
+# ---------------------------------------------------------------------------
+# Text und Syntax-Highlighting
+# ---------------------------------------------------------------------------
+
+def decode_text(data: bytes | None) -> str | None:
+  """Liefert den Text einer Datei oder None, wenn sie binär ist."""
+  if data is None or b"\0" in data[:8000]:
+    return None
+  return data.decode("utf-8", errors="replace").replace("\r\n", "\n")
+
+
+def text_lines(text: str | None) -> list[str]:
+  if not text:
+    return []
+  lines = text.split("\n")
+  if lines[-1] == "":
+    lines.pop()
+  return lines
+
+
+def lexer_for(path: str):
+  name = PurePosixPath(path).name
+  override = LEXER_OVERRIDES.get(PurePosixPath(path).suffix.lower())
+  if override:
+    return override(stripnl=False)
+  try:
+    return get_lexer_for_filename(name, stripnl=False)
+  except ClassNotFound:
+    return TextLexer(stripnl=False)
+
+
+def highlighted_lines(text: str | None, path: str) -> list[str]:
+  """Hebt den Text hervor und liefert eine HTML-Zeile je Textzeile."""
+  lines = text_lines(text)
+  if not lines:
+    return []
+
+  rendered = highlight(text, lexer_for(path), HtmlFormatter(nowrap=True)).split("\n")
+  if rendered and rendered[-1] == "":
+    rendered.pop()
+
+  # Die Zeilen müssen exakt zu den Textzeilen passen, sonst stimmen
+  # Zeilennummern und Diff-Markierungen nicht.
+  if len(rendered) != len(lines):
+    return [esc(line) for line in lines]
+  return rendered
+
+
+@dataclass
+class DiffRow:
+  kind: str  # "same", "add" oder "del"
+  old_number: int | None
+  new_number: int | None
+  html: str
+
+
+def diff_rows(path: str, old_text: str | None, new_text: str | None) -> list[DiffRow]:
+  old_lines = text_lines(old_text)
+  new_lines = text_lines(new_text)
+  old_html = highlighted_lines(old_text, path)
+  new_html = highlighted_lines(new_text, path)
+
+  rows = []
+  matcher = difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False)
+  for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    if tag == "equal":
+      rows.extend(
+        DiffRow("same", i + 1, j + 1, new_html[j])
+        for i, j in zip(range(i1, i2), range(j1, j2))
+      )
+      continue
+    rows.extend(DiffRow("del", i + 1, None, old_html[i]) for i in range(i1, i2))
+    rows.extend(DiffRow("add", None, j + 1, new_html[j]) for j in range(j1, j2))
+
+  return rows
+
+
+# ---------------------------------------------------------------------------
+# HTML
+# ---------------------------------------------------------------------------
 
 def load_template() -> str:
   return safe_read(TEMPLATE)
@@ -192,82 +448,73 @@ def render_page(title: str, body: str, version_url: str) -> str:
   )
 
 
-def lexer_for(path: Path):
-  suffix = path.suffix.lower()
-  if suffix == ".java":
-    return JavaLexer()
-  if suffix == ".xml":
-    return XmlLexer()
-  if suffix in {".yml", ".yaml"}:
-    return YamlLexer()
-  if suffix == ".json":
-    return JsonLexer()
-  if suffix == ".properties":
-    return PropertiesLexer()
-  if suffix == ".md":
-    return MarkdownLexer()
-  return TextLexer()
-
-
-def highlighted_code(text: str, path: Path) -> str:
-  return highlight(
-    text,
-    lexer_for(path),
-    HtmlFormatter(nowrap=True),
+def render_status(status: str, css_class: str) -> str:
+  return (
+    f'<span class="{css_class} {css_class}-{status}" '
+    f'title="{esc(STATUS_LABELS[status])}">{esc(status)}</span>'
   )
+
+
+def build_tree(paths: list[str]) -> dict:
+  root: dict = {}
+  for path in paths:
+    *directories, name = path.split("/")
+    node = root
+    for directory in directories:
+      node = node.setdefault(directory, {})
+    node[name] = None
+  return root
 
 
 def render_tree(
-  path: Path,
-  source_root: Path,
+  node: dict,
   version_url: str,
-  tree_id: str = "root",
+  tree_id: str,
+  marks: dict[str, str],
+  prefix: str = "",
 ) -> str:
-  dirs = []
-  files = []
-
-  children = sorted(
-    path.iterdir(),
-    key=lambda p: (p.is_file(), p.name.lower()),
-  )
-
-  for child in children:
-    if is_hidden(child):
-      continue
-
-    if child.is_dir():
-      dirs.append(child)
-    elif child.name == "pom.xml" or is_source(child):
-      files.append(child)
+  dirs = sorted((name for name, child in node.items() if child is not None), key=str.lower)
+  files = sorted((name for name, child in node.items() if child is None), key=str.lower)
 
   parts = ['<div class="project-tree">']
 
-  for index, directory in enumerate(dirs):
+  for index, name in enumerate(dirs):
     child_id = f"{tree_id}-{index}"
 
     parts.append(
       '<div class="tree-item py-1">'
       f'<button class="btn btn-sm p-0 me-1" type="button" '
       f'data-tree-toggle="{esc(child_id)}" aria-expanded="true">▾</button>'
-      f'<span class="tree-dir">{esc(directory.name)}</span>'
+      f'<span class="tree-dir">{esc(name)}</span>'
       f'<div id="{esc(child_id)}" class="tree-indent">'
-      f'{render_tree(directory, source_root, version_url, child_id)}'
+      f'{render_tree(node[name], version_url, child_id, marks, prefix + name + "/")}'
       '</div>'
       '</div>'
     )
 
-  for file in files:
-    relative = file.relative_to(source_root).as_posix()
+  for name in files:
+    relative = prefix + name
     href = version_url + relative + ".html"
+    status = marks.get(relative)
 
     parts.append(
       '<div class="tree-item py-1 ps-4">'
-      f'<a class="tree-link" href="{esc(href)}">{esc(file.name)}</a>'
+      f'<a class="tree-link" href="{esc(href)}">{esc(name)}</a>'
+      f'{render_status(status, "tree-status") if status else ""}'
       '</div>'
     )
 
   parts.append("</div>")
   return "".join(parts)
+
+
+def render_full_toggle(toggle_id: str) -> str:
+  return f"""
+<div class="form-check m-0 text-nowrap">
+    <input class="form-check-input" type="checkbox" id="{toggle_id}">
+    <label class="form-check-label small" for="{toggle_id}">Kompletter Stand</label>
+</div>
+"""
 
 
 def render_search_box() -> str:
@@ -285,68 +532,103 @@ def render_search_box() -> str:
 """
 
 
-def render_sidebar(source_root: Path, version_url: str) -> str:
+def render_project_tree(version: Version) -> str:
+  full_tree = build_tree(version.source.paths())
+
+  if version.changes is None:
+    return f"""
+<div class="card">
+    <div class="card-header fw-semibold">Projektstruktur</div>
+    <div class="card-body p-2">{render_tree(full_tree, version.url, "root", {})}</div>
+</div>
+"""
+
+  marks = {path: change.status for path, change in version.changes.items()}
+  if version.changes:
+    changes_html = render_tree(build_tree(list(version.changes)), version.url, "changes", marks)
+  else:
+    changes_html = '<div class="small text-body-secondary p-2">Keine Dateiänderungen.</div>'
+
   return f"""
-<div class="sidebar-content">
-    {render_version_selector(version_url)}
-    {render_search_box()}
-    <div class="card">
-        <div class="card-header fw-semibold">Projektstruktur</div>
-        <div class="card-body p-2">{render_tree(source_root, source_root, version_url)}</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <span class="fw-semibold">Projektstruktur</span>
+        {render_full_toggle("treeFullToggle")}
+    </div>
+    <div class="card-body p-2">
+        <div data-tree-view="changes">{changes_html}</div>
+        <div data-tree-view="full" class="d-none">
+            {render_tree(full_tree, version.url, "full", marks)}
+        </div>
     </div>
 </div>
 """
 
 
+def render_sidebar(version: Version, versions: list[Version]) -> str:
+  return f"""
+<div class="sidebar-content">
+    {render_version_selector(version, versions)}
+    {render_search_box()}
+    {render_project_tree(version)}
+</div>
+"""
+
+
 def load_prs() -> list[dict]:
-  if not MERGED_PRS_FILE.exists():
+  """Offene PRs (neueste zuerst), danach gemergte (zuletzt gemergte zuerst)."""
+  if not PRS_FILE.exists():
     return []
 
-  raw = json.loads(safe_read(MERGED_PRS_FILE))
-  prs = []
+  open_prs = []
+  merged_prs = []
 
-  for item in raw:
-    merge_commit = item.get("mergeCommit") or {}
-    sha = merge_commit.get("oid")
+  for item in json.loads(safe_read(PRS_FILE)):
+    state = item.get("state")
+
+    if state == "MERGED":
+      sha = (item.get("mergeCommit") or {}).get("oid")
+      target = merged_prs
+    elif state == "OPEN" and not item.get("isCrossRepository"):
+      # PRs aus Forks bleiben außen vor: ihr Inhalt ist ungeprüft und
+      # würde sonst ungefragt auf der Seite des Repos erscheinen.
+      sha = item.get("headRefOid")
+      target = open_prs
+    else:
+      continue
 
     if not sha:
       continue
+    if not resolve_commit(sha):
+      print(f"PR #{item['number']}: Commit {sha} fehlt lokal, PR wird übersprungen.")
+      continue
 
-    prs.append({
+    target.append({
       "number": int(item["number"]),
       "title": item.get("title", ""),
+      "state": state,
       "sha": sha,
-      "mergedAt": item.get("mergedAt", ""),
+      "mergedAt": item.get("mergedAt") or "",
+      "head": item.get("headRefOid"),
     })
 
-  return sorted(
-    prs,
-    key=lambda x: x["mergedAt"],
-    reverse=True,
-  )
+  open_prs.sort(key=lambda pr: pr["number"], reverse=True)
+  merged_prs.sort(key=lambda pr: pr["mergedAt"], reverse=True)
+  return open_prs + merged_prs
 
 
-def render_version_selector(current_url: str) -> str:
-  options = [("main", "Aktueller Stand", version_base("main"))]
-  for pr in load_prs():
-    options.append((
-      f"pr-{pr['number']}",
-      f"PR #{pr['number']} – {pr['title']}",
-      version_base("pr", pr["number"]),
-    ))
-
+def render_version_selector(current: Version, versions: list[Version]) -> str:
   option_html = []
-  for value, label, url in options:
-    selected = " selected" if url == current_url else ""
+  for version in versions:
+    selected = " selected" if version is current else ""
     option_html.append(
-      f'<option value="{esc(url)}"{selected}>{esc(label)}</option>'
+      f'<option value="{esc(version.url)}"{selected}>{esc(version.label)}</option>'
     )
 
   return f"""
 <div class="mb-3">
     <label for="versionSelect" class="form-label small fw-semibold">Version</label>
-    <select id="versionSelect" class="form-select"
-            onchange="if(this.value) window.location.href=this.value">
+    <select id="versionSelect" class="form-select">
         {''.join(option_html)}
     </select>
 </div>
@@ -375,14 +657,7 @@ def render_search_modal() -> str:
 """
 
 
-def render_shell(
-  title: str,
-  source_root: Path,
-  version_url: str,
-  main_content: str,
-) -> str:
-  sidebar = render_sidebar(source_root, version_url)
-
+def render_shell(title: str, version: Version, main_content: str) -> str:
   body = f"""
 <div class="app-shell d-flex flex-column">
     <header class="project-header py-3 px-3 px-lg-4">
@@ -391,18 +666,13 @@ def render_shell(
                 <div class="small text-body-secondary">Java / Maven</div>
                 <h1 class="h3 mb-0">{esc(title)}</h1>
             </div>
-            <div class="d-flex gap-2">
-                <a class="btn btn-outline-primary" href="{esc(version_url)}">
-                    Projektübersicht
-                </a>
-                <button id="themeToggle" class="btn btn-outline-secondary"
-                        type="button">☾ Dunkel</button>
-            </div>
+            <button id="themeToggle" class="btn btn-outline-secondary"
+                    type="button">☾ Dunkel</button>
         </div>
     </header>
 
     <div class="d-flex flex-grow-1">
-        <aside id="appSidebar" class="app-sidebar">{sidebar}</aside>
+        <aside id="appSidebar" class="app-sidebar">{version.sidebar}</aside>
         <div id="sidebarSplitter" class="sidebar-splitter"
              role="separator" aria-label="Breite der Seitenleiste ändern"
              aria-orientation="vertical"></div>
@@ -415,182 +685,204 @@ def render_shell(
 {render_search_modal()}
 """
 
-  return render_page(title, body, version_url)
+  return render_page(title, body, version.url)
 
 
-def render_overview(source_root: Path, version_url: str, kind: str, pr=None) -> str:
-  if kind == "main":
-    title = "Maven-Projekt"
-    intro = "Aktueller Stand aus dem ausgecheckten Branch."
-  else:
-    title = f"PR #{pr['number']} – {pr['title']}"
-    intro = "Projektstand nach dem Merge dieses Pull Requests."
-
-  readme = source_root / "README.md"
-  if not readme.exists():
-    readme = source_root / "README.MD"
+def render_overview(version: Version) -> str:
+  source = version.source
+  available = set(source.all_paths())
 
   readme_html = ""
-  if readme.exists():
+  readme = next((name for name in README_NAMES if name in available), None)
+  if readme:
+    readme_text = decode_text(source.read(readme)) or ""
     if markdown:
       readme_html = markdown.markdown(
-        safe_read(readme),
+        readme_text,
         extensions=["fenced_code", "tables", "toc"],
       )
     else:
-      readme_html = f"<pre>{esc(safe_read(readme))}</pre>"
+      readme_html = f"<pre>{esc(readme_text)}</pre>"
 
-  pom = source_root / "pom.xml"
   pom_html = ""
-  if pom.exists():
+  if "pom.xml" in available:
+    pom_code = "\n".join(highlighted_lines(decode_text(source.read("pom.xml")), "pom.xml"))
     pom_html = f"""
 <section class="card mb-4">
     <div class="card-header fw-semibold">pom.xml</div>
     <div class="card-body p-0 code-scroll">
-        <pre class="m-0 p-3"><code>{highlighted_code(safe_read(pom), pom)}</code></pre>
+        <pre class="m-0 p-3 highlight"><code>{pom_code}</code></pre>
     </div>
 </section>
 """
 
   content = f"""
 <div class="mb-4">
-    <div class="text-body-secondary">{esc(intro)}</div>
+    <div class="text-body-secondary">{esc(version.intro)}</div>
 </div>
 {pom_html}
 {f'<section class="card"><div class="card-header fw-semibold">README</div><div class="card-body">{readme_html}</div></section>' if readme_html else ''}
 """
-  return render_shell(title, source_root, version_url, content)
+  return render_shell(version.title, version, content)
 
 
-def render_source(path: Path, source_root: Path, version_url: str) -> str:
-  relative = path.relative_to(source_root).as_posix()
-  title = relative
-  source = safe_read(path)
-  highlighted = highlighted_code(source, path)
+def render_code_table(path: str, text: str) -> str:
+  rows = [
+    f'<tr><td class="code-line-number">{number}</td>'
+    f'<td class="code-line">{line}</td></tr>'
+    for number, line in enumerate(highlighted_lines(text, path), 1)
+  ]
+  return f'<table class="code-table highlight"><tbody>{"".join(rows)}</tbody></table>'
 
-  lines = highlighted.splitlines()
-  code_rows = []
-  for number, line in enumerate(lines, 1):
-    code_rows.append(
-      f'<tr><td class="code-line-number">{number}</td>'
-      f'<td class="code-line"><div class="highlight">{line}</div></td></tr>'
+
+def render_diff_row(row: DiffRow) -> str:
+  marker = {"add": "+", "del": "−", "same": ""}[row.kind]
+  return (
+    f'<tr class="diff-{row.kind}">'
+    f'<td class="code-line-number">{row.old_number or ""}</td>'
+    f'<td class="code-line-number">{row.new_number or ""}</td>'
+    f'<td class="diff-marker">{marker}</td>'
+    f'<td class="code-line">{row.html}</td>'
+    '</tr>'
+  )
+
+
+def render_diff_table(rows: list[DiffRow]) -> str:
+  # Nur die geänderten Zeilen; Lücken dazwischen werden als ⋯ angedeutet.
+  changes = []
+  previous = None
+  for index, row in enumerate(rows):
+    if row.kind == "same":
+      continue
+    if previous is not None and index != previous + 1:
+      changes.append('<tr class="diff-gap"><td colspan="4">⋯</td></tr>')
+    changes.append(render_diff_row(row))
+    previous = index
+
+  if not changes:
+    changes.append(
+      '<tr class="diff-gap"><td colspan="4">'
+      'Keine geänderten Zeilen (z. B. nur Zeilenenden).'
+      '</td></tr>'
     )
+
+  full = "".join(render_diff_row(row) for row in rows)
+  return f"""
+<table class="code-table highlight">
+    <tbody data-diff-view="changes">{"".join(changes)}</tbody>
+    <tbody data-diff-view="full" class="d-none">{full}</tbody>
+</table>
+"""
+
+
+def render_source(path: str, version: Version) -> str:
+  change = (version.changes or {}).get(path)
+  if change:
+    old, new = change.old, change.new
+  else:
+    old = new = version.source.read(path)
+
+  suffix = PurePosixPath(path).suffix.lower()
+  old_text, new_text = decode_text(old), decode_text(new)
+  is_text = (old is None or old_text is not None) and (new is None or new_text is not None)
+
+  preview = ""
+  if suffix in IMAGE_EXTENSIONS:
+    # Die Bilddatei liegt neben ihrer Seite und wird von dort eingebunden.
+    image = new if new is not None else old
+    write_bytes(version.destination / path, image)
+    preview = (
+      '<div class="image-preview p-3">'
+      f'<img src="{esc(PurePosixPath(path).name)}" alt="{esc(path)}">'
+      '</div>'
+    )
+
+  toggle = ""
+  if change and is_text:
+    body = render_diff_table(diff_rows(path, old_text, new_text))
+    toggle = render_full_toggle("fileFullToggle")
+  elif change:
+    body = (
+      '<div class="p-3 text-body-secondary">'
+      f'Binärdatei {esc(STATUS_LABELS[change.status])} – keine Textansicht.'
+      '</div>'
+    )
+  elif new_text is not None:
+    body = render_code_table(path, new_text)
+  else:
+    body = '<div class="p-3 text-body-secondary">Binärdatei – keine Textansicht.</div>'
 
   content = f"""
 <div class="mb-3">
-    <a href="{esc(version_url)}" class="text-decoration-none">← Projektübersicht</a>
+    <a href="{esc(version.url)}" class="btn btn-sm btn-outline-primary">← Projektübersicht</a>
 </div>
 <div class="card code-card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">{esc(title)}</span>
-        <span class="badge text-bg-secondary">{esc(path.suffix.lower() or 'text')}</span>
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">{esc(path)}</span>
+            {render_status(change.status, "file-status") if change else ""}
+        </span>
+        <span class="d-flex align-items-center gap-3">
+            {toggle}
+            <span class="badge text-bg-secondary">{esc(suffix or 'text')}</span>
+        </span>
     </div>
-    <div class="code-scroll">
-        <table class="code-table">
-            <tbody>{''.join(code_rows)}</tbody>
-        </table>
-    </div>
+    {preview}
+    <div class="code-scroll">{body}</div>
 </div>
 """
-  return render_shell(title, source_root, version_url, content)
+  return render_shell(path, version, content)
 
 
-def write_search_index(source_root: Path, version_url: str) -> None:
+def write_search_index(version: Version) -> None:
   items = []
-  for path in sorted(iter_visible_paths(source_root)):
-    if not is_searchable(path):
+  for path in version.source.paths():
+    if PurePosixPath(path).suffix.lower() not in SEARCH_EXTENSIONS:
       continue
-    rel = path.relative_to(source_root).as_posix()
+    content = decode_text(version.source.read(path))
+    if content is None:
+      continue
     items.append({
-      "name": path.name,
-      "path": rel,
-      "url": version_url + rel + ".html",
-      "content": safe_read(path),
+      "name": PurePosixPath(path).name,
+      "path": path,
+      "url": version.url + path + ".html",
+      "content": content,
     })
 
-  write(
-    SITE / ("search-index.js" if version_url == version_base("main") else
-            Path(version_url.rstrip("/")).name / "search-index.js"),
-    json.dumps(items, ensure_ascii=False),
-  )
+  write(version.destination / "search-index.json", json.dumps(items, ensure_ascii=False))
 
 
-def generate_version(source_root: Path, kind: str, pr=None) -> None:
-  if kind == "main":
-    destination = SITE
-    url = version_base("main")
-  else:
-    destination = SITE / "pr" / str(pr["number"])
-    url = version_base("pr", pr["number"])
+def generate_version(version: Version, versions: list[Version]) -> None:
+  version.destination.mkdir(parents=True, exist_ok=True)
+  # Die Seitenleiste ist für alle Seiten einer Version gleich.
+  version.sidebar = render_sidebar(version, versions)
 
-  destination.mkdir(parents=True, exist_ok=True)
+  write(version.destination / "index.html", render_overview(version))
 
-  # Main overview.
-  write(
-    destination / "index.html",
-    render_overview(source_root, url, kind, pr),
-  )
+  # Gelöschte Dateien bekommen ebenfalls eine Seite, damit ihr Diff sichtbar ist.
+  pages = list(version.source.paths())
+  if version.changes:
+    pages += [path for path, change in version.changes.items() if change.status == "D"]
 
-  # Source pages. Only the project files are included; .idea/README etc. are filtered.
-  for path in sorted(iter_visible_paths(source_root)):
-    if not is_source(path):
-      continue
-    rel = path.relative_to(source_root)
-    output = destination / (str(rel) + ".html")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    write(output, render_source(path, source_root, url))
+  for path in pages:
+    write(version.destination / (path + ".html"), render_source(path, version))
 
-  # Search index belongs to the version directory.
-  items = []
-  for path in sorted(iter_visible_paths(source_root)):
-    if not is_searchable(path):
-      continue
-    rel = path.relative_to(source_root).as_posix()
-    items.append({
-      "name": path.name,
-      "path": rel,
-      "url": url + rel + ".html",
-      "content": safe_read(path),
-    })
-  write(destination / "search-index.js", json.dumps(items, ensure_ascii=False))
-
-
-def snapshot(commit: str, destination: Path) -> None:
-  destination.mkdir(parents=True, exist_ok=True)
-  archive = subprocess.Popen(
-    ["git", "archive", commit],
-    cwd=ROOT,
-    stdout=subprocess.PIPE,
-  )
-  subprocess.run(["tar", "-x", "-C", str(destination)], stdin=archive.stdout, check=True)
-  archive.stdout.close()
-  archive.wait()
-  if archive.returncode != 0:
-    raise RuntimeError(f"git archive failed for {commit}")
-
-
-def download(url: str, target: Path) -> None:
-  target.parent.mkdir(parents=True, exist_ok=True)
-  print(f"Downloading {url}")
-  with urllib.request.urlopen(url) as response:
-    target.write_bytes(response.read())
+  write_search_index(version)
 
 
 def ensure_bootstrap() -> None:
-  css_path = PAGE_DIR / "bootstrap.min.css"
-  js_path = PAGE_DIR / "bootstrap.bundle.min.js"
+  for name, (url, checksum) in BOOTSTRAP_FILES.items():
+    path = PAGE_DIR / name
 
-  if not css_path.exists():
-    urllib.request.urlretrieve(
-      BOOTSTRAP_CSS_URL,
-      css_path,
-    )
+    if not path.exists():
+      urllib.request.urlretrieve(url, path)
 
-  if not js_path.exists():
-    urllib.request.urlretrieve(
-      BOOTSTRAP_JS_URL,
-      js_path,
-    )
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if actual != checksum:
+      path.unlink()
+      raise RuntimeError(
+        f"{name}: Prüfsumme {actual} statt {checksum} – Datei wurde gelöscht."
+      )
 
 
 def copy_static_assets() -> None:
@@ -600,14 +892,8 @@ def copy_static_assets() -> None:
   assets = SITE / "assets"
   assets.mkdir(parents=True, exist_ok=True)
 
-  shutil.copy2(
-    PAGE_DIR / "bootstrap.min.css",
-    assets / "bootstrap.min.css",
-  )
-  shutil.copy2(
-    PAGE_DIR / "bootstrap.bundle.min.js",
-    assets / "bootstrap.bundle.min.js",
-  )
+  for name in BOOTSTRAP_FILES:
+    shutil.copy2(PAGE_DIR / name, assets / name)
 
 
 def main() -> None:
@@ -620,14 +906,22 @@ def main() -> None:
   parser.add_argument(
     "--with-prs",
     action="store_true",
-    help="Generate merged PR snapshots from $RUNNER_TEMP/merged-prs.json.",
+    help="Generate open and merged PRs from $RUNNER_TEMP/prs.json.",
+  )
+  parser.add_argument(
+    "--simulate-pr",
+    nargs="?",
+    const="main",
+    metavar="BASE",
+    help="Local only: add a simulated PR comparing the working tree "
+         "against BASE (default: main).",
   )
   args = parser.parse_args()
 
-  if args.local and args.with_prs:
-    parser.error("--local and --with-prs are mutually exclusive")
+  if args.with_prs and (args.local or args.simulate_pr):
+    parser.error("--with-prs cannot be combined with --local or --simulate-pr")
 
-  local = args.local or not args.with_prs
+  local = not args.with_prs
   if local:
     os.environ["LOCAL_PREVIEW"] = "1"
 
@@ -635,42 +929,51 @@ def main() -> None:
   ensure_bootstrap()
   copy_static_assets()
 
+  versions = []
+
   if local:
-    generate_version(ROOT, "main")
-    print(f"Generated local preview in {SITE}")
-    return
+    work_tree = WorkTree()
+    versions.append(main_version(work_tree))
 
-  main_commit = git("rev-parse", "HEAD")
-  main_source = RUNNER_TEMP / "pages-main-source"
-
-  if main_source.exists():
-    shutil.rmtree(main_source)
-
-  snapshot(main_commit, main_source)
-
-  try:
-    generate_version(main_source, "main")
+    if args.simulate_pr:
+      base = git("merge-base", args.simulate_pr, "HEAD")
+      versions.append(pr_version(
+        LOCAL_PR_ID,
+        "Probe-PR (lokal)",
+        f"Simulierter Pull Request: Arbeitsverzeichnis gegenüber {args.simulate_pr}.",
+        CommitTree(base),
+        work_tree,
+      ))
+  else:
+    main_commit = git("rev-parse", "HEAD")
+    versions.append(main_version(CommitTree(main_commit)))
 
     for pr in load_prs():
-      source = RUNNER_TEMP / f"pages-pr-{pr['number']}-source"
+      if pr["state"] == "OPEN":
+        # Wie auf GitHub: Änderungen gegenüber dem Abzweig von main.
+        base = git("merge-base", main_commit, pr["sha"])
+        label = f"PR #{pr['number']} (offen) – {pr['title']}"
+        intro = "Offener Pull Request: Änderungen gegenüber main, Stand des letzten Pushs."
+      else:
+        base = merged_pr_base(pr)
+        label = f"PR #{pr['number']} – {pr['title']}"
+        intro = "Änderungen dieses Pull Requests."
 
-      if source.exists():
-        shutil.rmtree(source)
+      versions.append(pr_version(
+        pr["number"],
+        label,
+        intro,
+        CommitTree(base) if base else Source(),
+        CommitTree(pr["sha"]),
+      ))
 
-      snapshot(pr["sha"], source)
+  for version in versions:
+    generate_version(version, versions)
 
-      try:
-        generate_version(source, "pr", pr)
-      finally:
-        shutil.rmtree(source, ignore_errors=True)
+  if (SITE / PRS_FILE.name).exists():
+    raise RuntimeError(f"{PRS_FILE.name} must never be published")
 
-  finally:
-    shutil.rmtree(main_source, ignore_errors=True)
-
-  if (SITE / "merged-prs.json").exists():
-    raise RuntimeError("merged-prs.json must never be published")
-
-  print(f"Generated GitHub Pages site in {SITE}")
+  print(f"Generated {'local preview' if local else 'GitHub Pages site'} in {SITE}")
 
 
 if __name__ == "__main__":

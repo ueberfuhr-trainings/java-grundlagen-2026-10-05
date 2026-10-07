@@ -12,22 +12,27 @@
         try { localStorage.setItem(key, value); } catch (_) {}
     }
 
+    // Das Theme selbst setzt schon ein Skript im <head> (ohne Aufblitzen).
+    // Hier geht es nur um den Umschalter und um Wechsel der Systemeinstellung.
     function initTheme() {
-        const saved = storageGet("project-theme");
-        const theme = saved === "dark" || saved === "light" ? saved : "light";
-        root.setAttribute("data-bs-theme", theme);
-
         const button = document.getElementById("themeToggle");
-        if (!button) return;
 
         const update = () => {
+            if (!button) return;
             const dark = root.getAttribute("data-bs-theme") === "dark";
             button.textContent = dark ? "☀ Hell" : "☾ Dunkel";
             button.setAttribute("aria-label", dark ? "Helles Design" : "Dunkles Design");
             button.setAttribute("title", dark ? "Helles Design" : "Dunkles Design");
         };
 
-        button.addEventListener("click", () => {
+        // Solange nichts gewählt wurde, folgt die Seite dem System.
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", event => {
+            if (storageGet("project-theme")) return;
+            root.setAttribute("data-bs-theme", event.matches ? "dark" : "light");
+            update();
+        });
+
+        button?.addEventListener("click", () => {
             const next = root.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
             root.setAttribute("data-bs-theme", next);
             storageSet("project-theme", next);
@@ -35,6 +40,13 @@
         });
 
         update();
+    }
+
+    function initVersionSelect() {
+        const select = document.getElementById("versionSelect");
+        select?.addEventListener("change", () => {
+            if (select.value) window.location.href = select.value;
+        });
     }
 
     function initSplitter() {
@@ -69,10 +81,11 @@
             dragging = false;
             splitter.classList.remove("dragging");
             document.body.classList.remove("sidebar-resizing");
-            const value = getComputedStyle(document.documentElement)
-                .getPropertyValue("--project-sidebar-width")
-                .trim();
-            storageSet("sidebar-width", String.parseInt ? value : value);
+            const width = Number.parseInt(
+                getComputedStyle(document.documentElement).getPropertyValue("--project-sidebar-width"),
+                10
+            );
+            if (Number.isFinite(width)) storageSet("sidebar-width", String(width));
         };
 
         splitter.addEventListener("pointerup", stop);
@@ -96,13 +109,35 @@
         });
     }
 
+    // Umschalter zwischen Änderungen und komplettem Stand (nur bei PRs).
+    // Alle Elemente mit dem Attribut zeigen entweder "changes" oder "full".
+    function initViewToggle(toggleId, attribute, storageKey) {
+        const toggle = document.getElementById(toggleId);
+        if (!toggle) return;
+
+        const apply = () => {
+            document.querySelectorAll(`[${attribute}]`).forEach(element => {
+                const full = element.getAttribute(attribute) === "full";
+                element.classList.toggle("d-none", full !== toggle.checked);
+            });
+        };
+
+        toggle.checked = storageGet(storageKey) === "1";
+        toggle.addEventListener("change", () => {
+            storageSet(storageKey, toggle.checked ? "1" : "0");
+            apply();
+        });
+
+        apply();
+    }
+
     let searchIndexPromise = null;
 
     async function loadSearchIndex() {
         if (searchIndexPromise) return searchIndexPromise;
 
         const base = versionBase.endsWith("/") || versionBase === "" ? versionBase : `${versionBase}/`;
-        searchIndexPromise = fetch(`${base}search-index.js`, { cache: "no-store" })
+        searchIndexPromise = fetch(`${base}search-index.json`,{ cache: "no-store" })
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();
@@ -225,7 +260,10 @@
     }
 
     initTheme();
+    initVersionSelect();
     initSplitter();
     initTree();
+    initViewToggle("treeFullToggle", "data-tree-view", "pr-tree-full");
+    initViewToggle("fileFullToggle", "data-diff-view", "pr-file-full");
     initSearch();
 })();

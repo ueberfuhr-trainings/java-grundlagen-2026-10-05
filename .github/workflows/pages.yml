@@ -4,42 +4,65 @@ on:
   push:
     branches:
       - main
+  # Offene PRs erscheinen ebenfalls auf der Seite. pull_request_target läuft
+  # im Kontext von main – nur von dort darf in die Umgebung github-pages
+  # deployt werden. Der Inhalt der PRs wird dabei nur gelesen, nie ausgeführt.
+  pull_request_target:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, edited, closed]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: read
+
+# Jeder Lauf baut die komplette Seite. Deployments laufen nacheinander,
+# ein wartender Lauf ersetzt den vorherigen wartenden.
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
+    # Ein gemergter PR löst ohnehin einen Push auf main aus.
+    if: >-
+      github.event_name != 'pull_request_target'
+      || github.event.action != 'closed'
+      || !github.event.pull_request.merged
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
+      - name: Fetch pull request heads
+        run: git fetch --no-tags origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
+
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: .github/pages/requirements.txt
 
       - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pygments markdown
+        run: pip install -r .github/pages/requirements.txt
 
-      - name: Get merged PR metadata
+      - name: Get pull request metadata
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr list \
-            --state merged \
+            --state all \
+            --base "${{ github.event.repository.default_branch }}" \
             --limit 1000 \
-            --json number,title,mergeCommit,mergedAt \
-            > "$RUNNER_TEMP/merged-prs.json"
+            --json number,title,state,mergeCommit,mergedAt,headRefOid,isCrossRepository \
+            > "$RUNNER_TEMP/prs.json"
 
       - name: Validate generator
         run: python -m py_compile .github/pages/generate.py
@@ -52,18 +75,20 @@ jobs:
           test -f _site/index.html
           test -f _site/style.css
           test -f _site/site.js
-          test ! -f _site/merged-prs.json
+          test ! -f _site/prs.json
 
           echo "Generated files:"
           find _site -maxdepth 4 -type f | sort
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+          # Seiten wie .editorconfig.html beginnen mit einem Punkt.
+          include-hidden-files: true
 
   deploy:
     environment:
@@ -75,4 +100,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
