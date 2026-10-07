@@ -37,20 +37,37 @@ public class Bankanwendung {
     // Konten
 
     Konto konto1 = new Konto();
-    konto1.stand = 1500.0;
+    konto1.stand = 150000; // 1.500,00 €
     konto1.inhaber = kunde1;
 
     Konto konto2 = new Konto();
-    konto2.stand = 250.0;
+    konto2.stand = 25000; // 250,00 €
     konto2.inhaber = kunde1;
 
     Konto konto3 = new Konto();
-    konto3.stand = 3200.0;
+    konto3.stand = 320000; // 3.200,00 €
     konto3.inhaber = kunde2;
 
     // bank.kontoAnlegen(konto1);
     // bank.kontoAnlegen(konto2);
     // bank.kontoAnlegen(konto3);
+
+    // Vergleich
+
+    Kunde kunde1Kopie = new Kunde();
+    kunde1Kopie.nummer = kunde1.nummer;
+    kunde1Kopie.name = "Anna Schmidt";
+
+    System.out.println(kunde1 == kunde1Kopie);      // false: verschiedene Objekte
+    System.out.println(kunde1.equals(kunde1Kopie)); // true: gleiche Kundennummer
+    System.out.println(kunde1.equals(kunde2));
+
+    Konto konto1Kopie = new Konto();
+    konto1Kopie.iban = konto1.iban;
+
+    System.out.println(konto1 == konto1Kopie);      // false: verschiedene Objekte
+    System.out.println(konto1.equals(konto1Kopie)); // true: gleiche IBAN
+    System.out.println(konto1.equals(konto2));
 
     // Ausgabe
 
@@ -58,7 +75,7 @@ public class Bankanwendung {
       System.out.println(kunde.nummer + " " + kunde.name + " (" + kunde.wohnort.ort + ")");
       for (Konto konto : bank.konten) {
         if (konto.inhaber == kunde) {
-          System.out.println("  " + konto.iban + ": " + konto.stand + " €");
+          System.out.println("  " + konto.iban + ": " + konto.stand + " ct");
         }
       }
     }
