@@ -1,0 +1,53 @@
+@startuml
+
+skinparam linetype ortho
+
+class Dateisystem {
+}
+
+abstract class DateisystemEintrag {
+    name
+    ----
+    +setName(name: String)
+    {abstract} +getGröße(): long
+}
+
+class Datei {
+    endung
+    -inhalt: byte[]
+    ----
+    +getGröße(): long
+}
+
+class Ordner {
+    anzahlEinträge
+    ----
+    +getEinträge(): DateisystemEintrag[]
+    +hinzufügen(eintrag: DateisystemEintrag): boolean
+    +entfernen(eintrag: DateisystemEintrag): boolean
+    +getGröße(): long
+}
+
+note right of Datei::getGröße
+    return inhalt.length
+end note
+
+note right of Ordner::hinzufügen
+    <b>Zyklen verhindern:</b>
+    Ist der neue Eintrag ein Ordner, darf er weder
+    dieser Ordner selbst sein noch ihn (rekursiv)
+    enthalten – sonst wird das Hinzufügen abgelehnt
+    (Rückgabe false).
+end note
+
+note bottom of Ordner
+    getGröße(): Summe von getGröße()
+    aller enthaltenen Einträge
+end note
+
+Dateisystem --> DateisystemEintrag : kennt
+DateisystemEintrag <|-- Datei
+DateisystemEintrag <|-- Ordner
+Ordner "0..1" o--> "0..*" DateisystemEintrag : enthält
+
+@enduml
