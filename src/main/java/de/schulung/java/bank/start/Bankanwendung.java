@@ -11,7 +11,9 @@ public class Bankanwendung {
 
   public static void main(String[] args) {
 
-    Bank bank = new Bank();
+    Bank bank = Bank.INSTANCE;
+    Bank bank2 = Bank.INSTANCE; // !!!!
+    System.out.println(bank == bank2); // false: verschiedene Objekte
 
     // Kunden
 

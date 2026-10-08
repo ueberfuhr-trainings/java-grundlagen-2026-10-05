@@ -6,8 +6,13 @@ import java.util.UUID;
 
 public class Bank {
 
+  public static final Bank INSTANCE = new Bank();
+
   private Kunde[] kunden = new Kunde[0];
   private Konto[] konten = new Konto[0];
+
+  private Bank() {
+  }
 
   public Kunde[] getKunden() {
     return kunden;
