@@ -1,8 +1,8 @@
 package de.schulung.java.bank;
 
-public class Sparkonto extends Konto {
+public class Sparkonto extends Anlagekonto {
 
-  private double habenzins; // in Prozent p. a., stand >= 0
+  private double habenzins; // in Prozent p. a.
 
   public Sparkonto(Kunde inhaber) {
     super(inhaber);
@@ -14,5 +14,10 @@ public class Sparkonto extends Konto {
 
   public void setHabenzins(double habenzins) {
     this.habenzins = habenzins;
+  }
+
+  @Override
+  public double getZinssatz() {
+    return habenzins;
   }
 }
