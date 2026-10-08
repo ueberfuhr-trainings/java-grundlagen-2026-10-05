@@ -1,0 +1,40 @@
+@startuml
+
+class Bibliothek {
+}
+
+class Medium {
+    titel
+    erscheinungsjahr
+    ----
+    ausleihen()
+    zurückgeben()
+}
+
+class Printmedium {
+    seitenzahl
+    standort
+}
+
+class Buch {
+    auflage
+}
+
+class Zeitschrift {
+    ausgabennummer
+}
+
+class Hörbuch {
+    spieldauer
+    dateigröße
+    ----
+    herunterladen()
+}
+
+Bibliothek --> Medium : verleiht
+Medium <|-- Printmedium
+Medium <|-- Hörbuch
+Printmedium <|-- Buch
+Printmedium <|-- Zeitschrift
+
+@enduml
