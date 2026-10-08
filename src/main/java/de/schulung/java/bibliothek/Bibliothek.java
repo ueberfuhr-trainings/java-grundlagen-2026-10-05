@@ -14,12 +14,17 @@ import java.util.UUID;
  *       Es ist anfangs das heutige Datum und kann gesetzt werden.</li>
  * </ul>
  *
- * <h2>Regale und Exemplare</h2>
+ * <h2>Medien, Regale und Exemplare</h2>
  * <ul>
+ *   <li>Die Bibliothek verleiht Printmedien (Bücher, Zeitschriften) und Hörbücher.</li>
  *   <li>Beim Erstellen der Bibliothek werden 10 Regale angelegt (A1, A2, B1, B2, …, E2).</li>
- *   <li>Ein neues Exemplar erhält eine zufällige Inventarnummer und wird in ein Regal gestellt;
+ *   <li>Ein neues Exemplar erhält eine zufällige Inventarnummer.</li>
+ *   <li>Ein Printmedium erhält ein physisches Exemplar, das in ein Regal gestellt wird;
  *       die Regale werden der Reihe nach befüllt.</li>
+ *   <li>Ein Hörbuch erhält ein virtuelles Exemplar – eine Lizenz – ohne Regal.
+ *       Ein Hörbuch kann also so oft gleichzeitig ausgeliehen werden, wie es Exemplare gibt.</li>
  *   <li>Ein Exemplar ist verfügbar, wenn zu ihm keine offene Ausleihe existiert.</li>
+ *   <li>Herunterladen ist nur für offene Ausleihen von Hörbüchern möglich.</li>
  * </ul>
  *
  * <h2>Ausweise</h2>
@@ -113,21 +118,30 @@ public class Bibliothek {
 
   // Exemplare
 
-  public Exemplar erstelleExemplar(Buch buch) {
-    Exemplar exemplar = new Exemplar(UUID.randomUUID(), buch);
-    // Regale der Reihe nach befüllen
-    exemplar.setRegal(regale[exemplare.length % regale.length]);
+  public Exemplar erstelleExemplar(Medium medium) {
+    Exemplar exemplar;
+    if (medium instanceof Printmedium printmedium) {
+      PhysischesExemplar physischesExemplar = new PhysischesExemplar(UUID.randomUUID(), printmedium);
+      // Regale der Reihe nach befüllen
+      physischesExemplar.setRegal(regale[zählePhysischeExemplare() % regale.length]);
+      exemplar = physischesExemplar;
+    } else if (medium instanceof Hörbuch hörbuch) {
+      exemplar = new VirtuellesExemplar(UUID.randomUUID(), hörbuch);
+    } else {
+      System.out.println("Fehler: Für dieses Medium können keine Exemplare erstellt werden.");
+      return null;
+    }
 
     exemplare = Arrays.copyOf(exemplare, exemplare.length + 1);
     exemplare[exemplare.length - 1] = exemplar;
     return exemplar;
   }
 
-  public Exemplar[] findeVerfügbareExemplare(Buch buch) {
+  public Exemplar[] findeVerfügbareExemplare(Medium medium) {
     Exemplar[] gefundeneExemplare = new Exemplar[exemplare.length];
     int gefunden = 0;
     for (Exemplar exemplar : exemplare) {
-      if (exemplar.getBuch().equals(buch) && findeOffeneAusleihe(exemplar) == null) {
+      if (exemplar.getMedium().equals(medium) && findeOffeneAusleihe(exemplar) == null) {
         gefundeneExemplare[gefunden] = exemplar;
         gefunden++;
       }
@@ -271,7 +285,32 @@ public class Bibliothek {
     ausleihe.setRückgabeErfolgtAm(aktuellesDatum);
   }
 
+  // Herunterladen
+
+  public byte[] herunterladen(Ausleihe ausleihe) {
+    if (!ausleihe.isOffen()) {
+      System.out.println("Fehler: Die Ausleihe wurde bereits zurückgegeben.");
+      return null;
+    }
+    if (!(ausleihe.getExemplar() instanceof VirtuellesExemplar virtuellesExemplar)) {
+      System.out.println("Fehler: Nur Hörbücher können heruntergeladen werden.");
+      return null;
+    }
+    // vereinfacht: statt der echten Hörbuchdatei nur leere Bytes in der Dateigröße
+    return new byte[(int) virtuellesExemplar.getMedium().getDateigröße()];
+  }
+
   // Hilfsmethoden
+
+  private int zählePhysischeExemplare() {
+    int anzahl = 0;
+    for (Exemplar exemplar : exemplare) {
+      if (exemplar instanceof PhysischesExemplar) {
+        anzahl++;
+      }
+    }
+    return anzahl;
+  }
 
   private boolean istÜberfällig(Ausleihe ausleihe) {
     return ausleihe.isOffen()

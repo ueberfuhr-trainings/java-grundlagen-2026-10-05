@@ -2,11 +2,11 @@ package de.schulung.java.bibliothek;
 
 import java.util.Objects;
 
-public class Buch {
+public class Buch extends Printmedium {
 
   private final String isbn;
-  private String titel;
   private String autor;
+  private int auflage;
 
   public Buch(String isbn) {
     this.isbn = isbn;
@@ -14,20 +14,19 @@ public class Buch {
 
   public Buch(String isbn, String titel, String autor) {
     this.isbn = isbn;
-    this.titel = titel;
+    setTitel(titel);
     this.autor = autor;
+  }
+
+  public Buch(String isbn, String titel, String autor, int erscheinungsjahr, int seitenzahl, int auflage) {
+    super(titel, erscheinungsjahr, seitenzahl);
+    this.isbn = isbn;
+    this.autor = autor;
+    this.auflage = auflage;
   }
 
   public String getIsbn() {
     return isbn;
-  }
-
-  public String getTitel() {
-    return titel;
-  }
-
-  public void setTitel(String titel) {
-    this.titel = titel;
   }
 
   public String getAutor() {
@@ -36,6 +35,14 @@ public class Buch {
 
   public void setAutor(String autor) {
     this.autor = autor;
+  }
+
+  public int getAuflage() {
+    return auflage;
+  }
+
+  public void setAuflage(int auflage) {
+    this.auflage = auflage;
   }
 
   @Override

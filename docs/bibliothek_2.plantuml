@@ -1,0 +1,130 @@
+@startuml
+
+class Bibliothek {
+    -aktuellesDatum: LocalDate
+    ----
+    + erstelleExemplar(Medium):Exemplar
+    + findeGültigenAusweis(Leser):Ausweis
+    + anmelden(Leser):Ausweis
+    + verlängern(Ausweis):LocalDate
+    + findeÜberfälligeAusleihen(Ausweis):Ausleihe[]
+    + ausleihen(Exemplar, Ausweis):Ausleihe
+    + ausleihen(Exemplar, Ausweis, Dauer):Ausleihe
+    + verlängern(Ausleihe,Dauer):Ausleihperiode
+    + zurückgeben(Ausleihe)
+    + findeOffeneAusleihe(Exemplar):Ausleihe
+    + findeVerfügbareExemplare(Medium):Exemplar[]
+    + herunterladen(Ausleihe):byte[]
+}
+
+abstract class Medium {
+    -titel: String
+    -erscheinungsjahr: int
+}
+
+abstract class Printmedium {
+    -seitenzahl: int
+}
+
+class Buch {
+    -isbn: String
+    -autor: String
+    -auflage: int
+}
+
+class Zeitschrift {
+    -issn: String
+    -ausgabennummer: int
+}
+
+class Hörbuch {
+    -isbn: String
+    -spieldauer: Duration
+    -dateigröße: long
+}
+
+abstract class Exemplar {
+    -inventarnummer: UUID
+    ---
+    + {abstract} getMedium(): Medium
+}
+
+class PhysischesExemplar {
+    + getMedium(): Printmedium
+}
+
+class VirtuellesExemplar {
+    + getMedium(): Hörbuch
+}
+
+class Regal {
+    -nummer:String
+}
+
+class Leser {
+    -name: String
+}
+
+class Adresse {
+    -straße: String
+    -hausnummer: String
+    -PLZ: String
+    -ort: String
+}
+
+class Ausweis {
+    -nummer: UUID
+    -gültigBis:LocalDate
+    ---
+    + isGültigAm(LocalDate):boolean
+}
+
+class Ausleihe {
+    -rückgabeErfolgtAm: LocalDate
+    ---
+    + isOffen():boolean
+}
+
+class Ausleihperiode {
+    -erstelltAm: LocalDate
+    -beginntAm: LocalDate
+    -endetAm: LocalDate
+}
+
+Medium <|-- Printmedium
+Medium <|-- Hörbuch
+Printmedium <|-- Buch
+Printmedium <|-- Zeitschrift
+
+Bibliothek "1"--> "*" Exemplar : besitzt
+Bibliothek "1" --> "0..*" Ausleihe : verwaltet
+Bibliothek "1" --> "0..*" Ausweis : verleiht
+Exemplar <|-- PhysischesExemplar
+Exemplar <|-- VirtuellesExemplar
+Printmedium "1" <-- "0..*" PhysischesExemplar
+Hörbuch "1" <-- "0..*" VirtuellesExemplar
+PhysischesExemplar "*" --> "0..1" Regal : steht in
+Leser *--> "1" Adresse : wohnt
+Ausweis "*" --> "1" Leser
+Ausleihe "*" --> "1" Ausweis
+Ausleihe "*" --> "1" Exemplar
+Ausleihe *--> "1..*" Ausleihperiode
+
+note bottom of VirtuellesExemplar
+  eine Lizenz –
+  so viele gleichzeitige Ausleihen,
+  wie es Exemplare gibt
+end note
+
+note bottom of Medium
+  Identität je Unterklasse:
+  Buch, Hörbuch: isbn
+  Zeitschrift: issn + ausgabennummer
+end note
+
+note left of Bibliothek
+  herunterladen(): nur für
+  offene Ausleihen von Hörbüchern
+end note
+
+@enduml
