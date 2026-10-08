@@ -4,25 +4,22 @@ class Bank {
     +sucheKonto(iban: String): Konto
     +kundeAnlegen(kunde: Kunde)
     +kontoAnlegen(konto: Konto)
-    {static} +ibanErzeugen(): String
+    {static} +erzeugeIban(): String
 }
 
 class Kunde {
     -nummer: UUID
     -name: String
     -wohnort: Adresse
-    --
-    +wohnortÄndern(adresse: Adresse)
 }
 
 class Konto {
     -iban: String
-    -stand: Geldbetrag
+    -stand: long
     {stand >= 0}
     --
-    +einzahlen(betrag: Geldbetrag)
-    +abheben(betrag: Geldbetrag)
-    +getStand(): Geldbetrag
+    +einzahlen(betrag: long)
+    +abheben(betrag: long)
 }
 
 class Adresse {
