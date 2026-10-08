@@ -2,10 +2,10 @@ package de.schulung.java.bank;
 
 import java.util.Objects;
 
-public class Konto {
+public abstract class Konto {
 
   private String iban;
-  private long stand; // in Cent, stand >= 0
+  private long stand; // in Cent
   private final Kunde inhaber;
 
   public Konto(Kunde inhaber) {

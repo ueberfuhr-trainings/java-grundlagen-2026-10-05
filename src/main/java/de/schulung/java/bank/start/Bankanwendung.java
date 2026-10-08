@@ -2,8 +2,10 @@ package de.schulung.java.bank.start;
 
 import de.schulung.java.bank.Adresse;
 import de.schulung.java.bank.Bank;
+import de.schulung.java.bank.Girokonto;
 import de.schulung.java.bank.Konto;
 import de.schulung.java.bank.Kunde;
+import de.schulung.java.bank.Sparkonto;
 
 import java.util.Arrays;
 
@@ -50,14 +52,24 @@ public class Bankanwendung {
 
     // Konten
 
-    Konto konto1 = new Konto(kunde1);
+    Girokonto konto1 = new Girokonto(kunde1);
+    konto1.setDispolimit(100000); // 1.000,00 €
     konto1.einzahlen(150000); // 1.500,00 €
 
-    Konto konto2 = new Konto(kunde1);
+    Sparkonto konto2 = new Sparkonto(kunde1);
+    konto2.setHabenzins(2.5); // 2,5 % p. a.
     konto2.einzahlen(25000); // 250,00 €
 
-    Konto konto3 = new Konto(kunde2);
+    Girokonto konto3 = new Girokonto(kunde2);
+    konto3.setDispolimit(50000); // 500,00 €
     konto3.einzahlen(320000); // 3.200,00 €
+
+    Sparkonto konto4 = new Sparkonto(kunde3);
+    konto4.setHabenzins(3.0); // 3,0 % p. a.
+    konto4.einzahlen(1000000); // 10.000,00 €
+
+    System.out.println(konto1.getDispolimit());
+    System.out.println(konto2.getHabenzins());
 
     System.out.println(konto1.getStand());
     System.out.println(konto2.getStand());
@@ -65,6 +77,7 @@ public class Bankanwendung {
     bank.kontoAnlegen(konto1);
     bank.kontoAnlegen(konto2);
     bank.kontoAnlegen(konto3);
+    bank.kontoAnlegen(konto4);
 
     konto1.einzahlen(4000);
     konto1.auszahlen(500000000);
@@ -80,7 +93,7 @@ public class Bankanwendung {
     System.out.println(kunde1.equals(kunde1Kopie)); // true: gleiche Kundennummer
     System.out.println(kunde1.equals(kunde2));
 
-    Konto konto1Kopie = new Konto(konto1.getInhaber());
+    Girokonto konto1Kopie = new Girokonto(konto1.getInhaber());
     konto1Kopie.setIban(konto1.getIban());
 
     System.out.println(konto1 == konto1Kopie);      // false: verschiedene Objekte
