@@ -1,0 +1,26 @@
+@startuml
+
+class Dateisystem {
+}
+
+class DateisystemEintrag {
+    name
+    größe
+    ----
+    umbenennen()
+    inhaltAuslesen()
+}
+
+class Datei {
+    endung
+}
+
+class Ordner {
+    anzahlEinträge
+}
+
+Dateisystem --> DateisystemEintrag : kennt
+DateisystemEintrag <|-- Datei
+DateisystemEintrag <|-- Ordner
+
+@enduml

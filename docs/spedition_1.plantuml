@@ -1,0 +1,36 @@
+@startuml
+
+class Spedition {
+}
+
+class Fahrzeug {
+    inventarnummer
+    gewicht
+    ----
+    warten()
+}
+
+class Fahrrad {
+}
+
+class Kraftwagen {
+    kennzeichen
+    kraftstoffstand
+    motorleistung
+}
+
+class PKW {
+    sitzplatzzahl
+}
+
+class LKW {
+    nutzlast
+}
+
+Spedition --> Fahrzeug : verwaltet
+Fahrzeug <|-- Fahrrad
+Fahrzeug <|-- Kraftwagen
+Kraftwagen <|-- PKW
+Kraftwagen <|-- LKW
+
+@enduml
