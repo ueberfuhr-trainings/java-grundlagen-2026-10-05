@@ -1,0 +1,33 @@
+@startuml
+
+class Federmappe {
+    ----
+    + addStift(Stift)
+    + alleSchreiben()
+}
+
+class Stift {
+    -farbe: String
+    -füllstand: int
+    ----
+    + schreiben()
+}
+
+class Kuli {
+}
+
+class Textmarker {
+    -strichDicke: double
+    ----
+    + tinteEinfüllen(volumen: int)
+}
+
+class Mine {
+}
+
+Stift <|-- Kuli
+Stift <|-- Textmarker
+Federmappe "1" --> "0..*" Stift : enthält
+Kuli "*" --> "0..1" Mine : hat
+
+@enduml
