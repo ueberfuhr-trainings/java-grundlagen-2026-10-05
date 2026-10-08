@@ -7,7 +7,12 @@ import de.schulung.java.bibliothek.Ausweis;
 import de.schulung.java.bibliothek.Bibliothek;
 import de.schulung.java.bibliothek.Buch;
 import de.schulung.java.bibliothek.Exemplar;
+import de.schulung.java.bibliothek.Hörbuch;
 import de.schulung.java.bibliothek.Leser;
+import de.schulung.java.bibliothek.PhysischesExemplar;
+import de.schulung.java.bibliothek.Zeitschrift;
+
+import java.time.Duration;
 
 public class Bibliotheksanwendung {
 
@@ -26,6 +31,12 @@ public class Bibliotheksanwendung {
     System.out.println(buch1 == buch1Kopie);      // false: verschiedene Objekte
     System.out.println(buch1.equals(buch1Kopie)); // true: gleiche ISBN
 
+    // weitere Medien
+
+    Zeitschrift zeitschrift = new Zeitschrift("0038-7452", 41, "Der Spiegel", 2026, 140);
+    Hörbuch hörbuch = new Hörbuch("978-3-86680-200-7", "Java zum Hören", 2025,
+      Duration.ofHours(8).plusMinutes(30), 300_000_000);
+
     // Exemplare
 
     Exemplar exemplar1 = bibliothek.erstelleExemplar(buch1);
@@ -36,11 +47,17 @@ public class Bibliotheksanwendung {
     for (int i = 0; i < kotlinExemplare.length; i++) {
       kotlinExemplare[i] = bibliothek.erstelleExemplar(buch3);
     }
+    bibliothek.erstelleExemplar(zeitschrift);
+    Exemplar hörbuchLizenz1 = bibliothek.erstelleExemplar(hörbuch); // virtuell: kein Regal
+    Exemplar hörbuchLizenz2 = bibliothek.erstelleExemplar(hörbuch);
 
     System.out.println("Exemplare:");
     for (Exemplar exemplar : bibliothek.getExemplare()) {
+      String standort = exemplar instanceof PhysischesExemplar physischesExemplar
+        ? "Regal " + physischesExemplar.getRegal().getNummer()
+        : "Lizenz";
       System.out.println("  " + exemplar.getInventarnummer() + " "
-        + exemplar.getBuch().getTitel() + " (Regal " + exemplar.getRegal().getNummer() + ")");
+        + exemplar.getMedium().getTitel() + " (" + standort + ")");
     }
 
     // Leser und Ausweise
@@ -78,6 +95,19 @@ public class Bibliotheksanwendung {
       + bibliothek.findeVerfügbareExemplare(buch2).length);
     System.out.println("Verfügbare Exemplare von „" + buch3.getTitel() + "“: "
       + bibliothek.findeVerfügbareExemplare(buch3).length);
+
+    // Hörbücher: zwei Lizenzen, also zwei gleichzeitige Ausleihen
+
+    Ausleihe hörbuchAusleihe1 = bibliothek.ausleihen(hörbuchLizenz1, ausweis2);
+    Ausleihe hörbuchAusleihe2 = bibliothek.ausleihen(hörbuchLizenz2, ausweis2);
+    System.out.println("Verfügbare Exemplare von „" + hörbuch.getTitel() + "“: "
+      + bibliothek.findeVerfügbareExemplare(hörbuch).length);
+    byte[] datei = bibliothek.herunterladen(hörbuchAusleihe1);
+    System.out.println("„" + hörbuch.getTitel() + "“ heruntergeladen: " + datei.length + " Bytes");
+    bibliothek.herunterladen(ausleihe1); // Fehler: kein Hörbuch
+    bibliothek.zurückgeben(hörbuchAusleihe1);
+    bibliothek.zurückgeben(hörbuchAusleihe2);
+    bibliothek.herunterladen(hörbuchAusleihe1); // Fehler: bereits zurückgegeben
 
     // Verlängern
 
@@ -137,7 +167,7 @@ public class Bibliotheksanwendung {
 
     System.out.println("Ausleihen:");
     for (Ausleihe ausleihe : bibliothek.getAusleihen()) {
-      System.out.println("  " + ausleihe.getExemplar().getBuch().getTitel()
+      System.out.println("  " + ausleihe.getExemplar().getMedium().getTitel()
         + " an " + ausleihe.getAusweis().getLeser().getName()
         + " bis " + ausleihe.getLetzteAusleihperiode().getEndetAm()
         + (ausleihe.isOffen() ? " (offen)" : " (zurückgegeben am " + ausleihe.getRückgabeErfolgtAm() + ")"));
@@ -147,7 +177,7 @@ public class Bibliotheksanwendung {
 
   static void gibAusleihperiodenAus(Ausleihe ausleihe) {
     System.out.println("Ausleihperioden von " + ausleihe.getAusweis().getLeser().getName()
-      + " für „" + ausleihe.getExemplar().getBuch().getTitel() + "“:");
+      + " für „" + ausleihe.getExemplar().getMedium().getTitel() + "“:");
     for (Ausleihperiode ausleihperiode : ausleihe.getAusleihperioden()) {
       System.out.println("  " + ausleihperiode.getBeginntAm() + " bis " + ausleihperiode.getEndetAm());
     }
