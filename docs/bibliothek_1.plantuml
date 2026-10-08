@@ -1,8 +1,17 @@
 @startuml
 
 class Bibliothek {
+    -aktuellesDatum: LocalDate
     ----
-    + anmelden(Leser): Ausweis
+    + erstelleExemplar(Buch):Exemplar
+    + findeGültigenAusweis(Leser):Ausweis
+    + anmelden(Leser):Ausweis
+    + verlängern(Ausweis):LocalDate
+    + findeÜberfälligeAusleihen(Ausweis):Ausleihe[]
+    + ausleihen(Exemplar, Ausweis):Ausleihe
+    + ausleihen(Exemplar, Ausweis, Dauer):Ausleihe
+    + verlängern(Ausleihe,Dauer):Ausleihperiode
+    + zurückgeben(Ausleihe)
     + findeOffeneAusleihe(Exemplar):Ausleihe
     + findeVerfügbareExemplare(Buch):Exemplar[]
 }
@@ -14,10 +23,11 @@ class Buch {
 }
 
 class Exemplar {
-    -inventarnummer: String
+    -inventarnummer: UUID
 }
 
 class Regal {
+    -nummer:String
 }
 
 class Leser {
@@ -32,16 +42,16 @@ class Adresse {
 }
 
 class Ausweis {
-    -nummer: String
-    -gültig: boolean
+    -nummer: UUID
+    -gültigBis:LocalDate
+    ---
+    + isGültigAm(LocalDate):boolean
 }
 
 class Ausleihe {
     -rückgabeErfolgtAm: LocalDate
     ---
     + isOffen():boolean
-    + verlängern(Dauer):Ausleihperiode
-    + zurückgeben()
 }
 
 class Ausleihperiode {
