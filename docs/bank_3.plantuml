@@ -1,0 +1,60 @@
+@startuml
+
+class Bank {
+    +sucheKonto(iban: String): Konto
+    +kundeAnlegen(kunde: Kunde)
+    +kontoAnlegen(konto: Konto)
+    {static} +erzeugeIban(): String
+}
+
+class Kunde {
+    -nummer: UUID
+    -name: String
+    -wohnort: Adresse
+}
+
+abstract class Konto {
+    -iban: String
+    -stand: long
+    --
+    +einzahlen(betrag: long)
+    +abheben(betrag: long)
+}
+
+class Girokonto {
+    -dispolimit: long
+    {stand >= -dispolimit}
+}
+
+abstract class Anlagekonto {
+    {stand >= 0}
+    --
+    {abstract} +getZinssatz(): double
+}
+
+class Sparkonto {
+    -habenzins: double
+}
+
+class Festgeldkonto {
+    -laufzeit: int
+    -zinssatz: double {readOnly}
+}
+
+class Adresse {
+    -straße: String
+    -hausnummer: String
+    -PLZ: String
+    -ort: String
+}
+
+Bank "1" --> "0..*" Kunde : kennt
+Bank "1" --> "0..*" Konto : kennt
+Kunde "1" <-- "0..*" Konto : besitzt
+Kunde "1" *--> "1" Adresse : hat
+Konto <|-- Girokonto
+Konto <|-- Anlagekonto
+Anlagekonto <|-- Sparkonto
+Anlagekonto <|-- Festgeldkonto
+
+@enduml

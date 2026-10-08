@@ -2,6 +2,7 @@ package de.schulung.java.bank.start;
 
 import de.schulung.java.bank.Adresse;
 import de.schulung.java.bank.Bank;
+import de.schulung.java.bank.Festgeldkonto;
 import de.schulung.java.bank.Girokonto;
 import de.schulung.java.bank.Konto;
 import de.schulung.java.bank.Kunde;
@@ -68,8 +69,13 @@ public class Bankanwendung {
     konto4.setHabenzins(3.0); // 3,0 % p. a.
     konto4.einzahlen(1000000); // 10.000,00 €
 
+    Festgeldkonto konto5 = new Festgeldkonto(kunde2, 3.5); // 3,5 % p. a.
+    konto5.setLaufzeit(24); // 2 Jahre
+    konto5.einzahlen(2000000); // 20.000,00 €
+
     System.out.println(konto1.getDispolimit());
     System.out.println(konto2.getHabenzins());
+    System.out.println(konto5.getLaufzeit() + " Monate, " + konto5.getZinssatz() + " %");
 
     System.out.println(konto1.getStand());
     System.out.println(konto2.getStand());
@@ -78,6 +84,7 @@ public class Bankanwendung {
     bank.kontoAnlegen(konto2);
     bank.kontoAnlegen(konto3);
     bank.kontoAnlegen(konto4);
+    bank.kontoAnlegen(konto5);
 
     konto1.einzahlen(4000);
     konto1.auszahlen(500000000);
