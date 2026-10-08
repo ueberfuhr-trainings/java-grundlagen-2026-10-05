@@ -1,6 +1,6 @@
 package de.schulung.java.stifte;
 
-public abstract class Stift {
+public abstract class Stift implements Beleerbar {
 
   private String farbe;
   private int füllstand;
@@ -8,6 +8,11 @@ public abstract class Stift {
   public Stift(String farbe, int füllstand) {
     this.farbe = farbe;
     this.füllstand = füllstand;
+  }
+
+  @Override
+  public void leeren(int bisStand) {
+    this.füllstand = bisStand;
   }
 
   public String getFarbe() {
