@@ -25,4 +25,8 @@ public class Textmarker extends Stift {
     this.strichDicke = strichDicke;
   }
 
+  @Override
+  public void auffüllen() {
+    tinteEinfüllen(100);
+  }
 }

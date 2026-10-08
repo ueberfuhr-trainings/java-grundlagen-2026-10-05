@@ -20,4 +20,9 @@ public class Kuli extends Stift {
   public void setMine(Mine mine) {
     this.mine = mine;
   }
+
+  @Override
+  public void auffüllen() {
+    setMine(new Mine());
+  }
 }

@@ -11,4 +11,17 @@ public class Federmappe {
     this.stifte[this.stifte.length - 1] = stift;
   }
 
+  public void alleSchreiben() {
+    for (Stift stift : this.stifte) {
+      stift.schreiben();
+    }
+  }
+
+  public void alleAuffüllen() {
+    for (Stift stift : this.stifte) {
+      stift.auffüllen();
+    }
+  }
+
+
 }

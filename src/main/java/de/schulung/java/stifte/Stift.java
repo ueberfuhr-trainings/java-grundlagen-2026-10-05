@@ -1,6 +1,6 @@
 package de.schulung.java.stifte;
 
-public class Stift {
+public abstract class Stift {
 
   private String farbe;
   private int füllstand;
@@ -25,4 +25,9 @@ public class Stift {
   protected void setFüllstand(int füllstand) {
     this.füllstand = füllstand;
   }
+
+  public abstract void schreiben();
+
+  public abstract void auffüllen();
+
 }
