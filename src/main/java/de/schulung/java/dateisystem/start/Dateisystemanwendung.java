@@ -65,6 +65,25 @@ public class Dateisystemanwendung {
     System.out.println("Wurzel in Bilder: " + bilder.hinzufügen(wurzel));        // false
     System.out.println("strand doppelt: " + bilder.hinzufügen(strand));          // false
 
+    // Pfade
+
+    System.out.println();
+    System.out.println("Pfad strand: " + strand.getPath());
+    System.out.println("Parent strand: " + strand.getParent().getName());
+    System.out.print("Bestandteile:");
+    for (int i = 0; i < strand.getPath().getNameCount(); i++) {
+      System.out.print(" [" + strand.getPath().getName(i) + "]");
+    }
+    System.out.println();
+
+    // Verschieben: erst entfernen, dann woanders hinzufügen
+
+    System.out.println();
+    System.out.println("einkaufsliste nach Bilder (noch eingeordnet): " + bilder.hinzufügen(einkaufsliste)); // false
+    dokumente.entfernen(einkaufsliste);
+    System.out.println("einkaufsliste nach Bilder: " + bilder.hinzufügen(einkaufsliste));                     // true
+    System.out.println("Pfad einkaufsliste: " + einkaufsliste.getPath());
+
     // Entfernen
 
     System.out.println();

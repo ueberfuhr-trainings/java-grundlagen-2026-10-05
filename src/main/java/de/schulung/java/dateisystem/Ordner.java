@@ -25,18 +25,21 @@ public class Ordner extends VerknüpfbarerEintrag {
   /**
    * Fügt einen Eintrag hinzu.
    *
-   * @return false, wenn der Eintrag fehlt, schon enthalten ist oder einen Zyklus erzeugen würde
+   * @return false, wenn der Eintrag fehlt, bereits in einem Ordner liegt oder einen Zyklus erzeugen würde
    */
   public boolean hinzufügen(DateisystemEintrag eintrag) {
-    if (eintrag == null || eintrag == this || enthält(eintrag)) {
+    if (eintrag == null || eintrag.getParent() != null) {
       return false;
     }
-    // Zyklus: der neue Ordner enthält (rekursiv) bereits diesen Ordner
-    if (eintrag instanceof Ordner ordner && ordner.enthält(this)) {
-      return false;
+    // Zyklus: der Eintrag ist dieser Ordner oder einer seiner übergeordneten Ordner
+    for (Ordner ordner = this; ordner != null; ordner = ordner.getParent()) {
+      if (ordner == eintrag) {
+        return false;
+      }
     }
     einträge = Arrays.copyOf(einträge, einträge.length + 1);
     einträge[einträge.length - 1] = eintrag;
+    eintrag.setParent(this);
     return true;
   }
 
@@ -51,21 +54,7 @@ public class Ordner extends VerknüpfbarerEintrag {
         // letzten Eintrag an die frei gewordene Stelle setzen und Array verkürzen
         einträge[i] = einträge[einträge.length - 1];
         einträge = Arrays.copyOf(einträge, einträge.length - 1);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Prüft, ob der Eintrag in diesem Ordner oder einem seiner Unterordner liegt.
-   */
-  public boolean enthält(DateisystemEintrag eintrag) {
-    for (DateisystemEintrag e : einträge) {
-      if (e == eintrag) {
-        return true;
-      }
-      if (e instanceof Ordner unterordner && unterordner.enthält(eintrag)) {
+        eintrag.setParent(null);
         return true;
       }
     }
