@@ -45,9 +45,11 @@ public abstract class Konto {
     return this.stand;
   }
 
+  protected abstract boolean isAuszahlenErlaubt(long betrag);
+
   public long auszahlen(long betrag) {
-    if (this.stand < betrag) {
-      System.out.println("Fehler: Kontostand zu niedrig. Auszahlung nicht möglich.");
+    if (!isAuszahlenErlaubt(betrag)) {
+      System.out.println("Fehler: Auszahlung nicht möglich.");
       return this.stand;
     }
     this.stand = this.stand - betrag;

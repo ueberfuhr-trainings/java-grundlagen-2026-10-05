@@ -19,17 +19,21 @@ abstract class Konto {
     --
     +einzahlen(betrag: long)
     +abheben(betrag: long)
+    {abstract} #isAuszahlenErlaubt(betrag: long): boolean
 }
 
 class Girokonto {
     -dispolimit: long
     {stand >= -dispolimit}
+    --
+    #isAuszahlenErlaubt(betrag: long): boolean
 }
 
 abstract class Anlagekonto {
     {stand >= 0}
     --
     {abstract} +getZinssatz(): double
+    #isAuszahlenErlaubt(betrag: long): boolean
 }
 
 class Sparkonto {
