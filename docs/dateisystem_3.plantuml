@@ -1,0 +1,70 @@
+@startuml
+
+skinparam linetype ortho
+skinparam nodesep 120
+
+class Dateisystem {
+}
+
+abstract class DateisystemEintrag {
+    name
+    ----
+    +setName(name: String)
+    {abstract} +getGröße(): long
+}
+
+class Datei {
+    endung
+    -inhalt: byte[]
+    ----
+    +getGröße(): long
+}
+
+class Ordner {
+    anzahlEinträge
+    ----
+    +getEinträge(): DateisystemEintrag[]
+    +hinzufügen(eintrag: DateisystemEintrag): boolean
+    +entfernen(eintrag: DateisystemEintrag): boolean
+    +getGröße(): long
+}
+
+abstract class VerknüpfbarerEintrag {
+}
+
+class Verknüpfung {
+    +getGröße(): long
+}
+
+note right of Datei::getGröße
+    return inhalt.length
+end note
+
+note left of Ordner::hinzufügen
+    <b>Zyklen verhindern:</b>
+    Ist der neue Eintrag ein Ordner,
+    darf er weder dieser Ordner selbst
+    sein noch ihn (rekursiv) enthalten –
+    sonst wird das Hinzufügen
+    abgelehnt (Rückgabe false).
+end note
+
+note right of Verknüpfung::getGröße
+    return 1
+end note
+
+note bottom of Ordner
+    getGröße(): Summe von getGröße()
+    aller enthaltenen Einträge
+end note
+
+Dateisystem --> DateisystemEintrag : kennt
+DateisystemEintrag <|-- VerknüpfbarerEintrag
+DateisystemEintrag <|-- Verknüpfung
+VerknüpfbarerEintrag <|-- Ordner
+VerknüpfbarerEintrag <|-- Datei
+VerknüpfbarerEintrag "1" <-right- "0..*" Verknüpfung : zeigt auf (ziel)
+DateisystemEintrag "0..*" <--o "0..1" Ordner : enthält
+Ordner -[hidden]right- Datei
+
+@enduml

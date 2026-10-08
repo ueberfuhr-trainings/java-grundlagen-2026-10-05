@@ -1,6 +1,6 @@
 package de.schulung.java.dateisystem;
 
-public class Datei extends DateisystemEintrag {
+public class Datei extends VerknüpfbarerEintrag {
 
   private String endung;
   private byte[] inhalt;
