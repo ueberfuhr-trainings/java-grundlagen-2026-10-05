@@ -1,0 +1,64 @@
+@startuml
+
+class Bibliothek {
+    ----
+    + anmelden(Leser): Ausweis
+    + findeOffeneAusleihe(Exemplar):Ausleihe
+    + findeVerfügbareExemplare(Buch):Exemplar[]
+}
+
+class Buch {
+    -isbn:String
+    -titel:String
+    -autor: String
+}
+
+class Exemplar {
+    -inventarnummer: String
+}
+
+class Regal {
+}
+
+class Leser {
+    -name: String
+}
+
+class Adresse {
+    -straße: String
+    -hausnummer: String
+    -PLZ: String
+    -ort: String
+}
+
+class Ausweis {
+    -nummer: String
+    -gültig: boolean
+}
+
+class Ausleihe {
+    -rückgabeErfolgtAm: LocalDate
+    ---
+    + isOffen():boolean
+    + verlängern(Dauer):Ausleihperiode
+    + zurückgeben()
+}
+
+class Ausleihperiode {
+    -erstelltAm: LocalDate
+    -beginntAm: LocalDate
+    -endetAm: LocalDate
+}
+
+Bibliothek "1"--> "*" Exemplar : besitzt
+Bibliothek "1" --> "0..*" Ausleihe : verwaltet
+Bibliothek "1" --> "0..*" Ausweis : verleiht
+Buch "1" <-- "0..*" Exemplar
+Exemplar "*" --> "0..1" Regal : steht in
+Leser *--> "1" Adresse : wohnt
+Ausweis "*" --> "1" Leser
+Ausleihe "*" --> "1" Ausweis
+Ausleihe "*" --> "1" Exemplar
+Ausleihe *--> "1..*" Ausleihperiode
+
+@enduml
