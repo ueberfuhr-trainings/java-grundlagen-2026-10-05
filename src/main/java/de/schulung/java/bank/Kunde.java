@@ -40,4 +40,9 @@ public class Kunde {
     return Objects.equals(nummer, kunde.nummer);
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(nummer);
+  }
+
 }

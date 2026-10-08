@@ -31,6 +31,11 @@ public class Konto {
     return Objects.equals(iban, konto.iban);
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(iban);
+  }
+
   public long getStand() {
     return this.stand;
   }
