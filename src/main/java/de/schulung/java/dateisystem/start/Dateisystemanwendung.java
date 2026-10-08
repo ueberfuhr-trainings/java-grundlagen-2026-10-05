@@ -4,6 +4,7 @@ import de.schulung.java.dateisystem.Datei;
 import de.schulung.java.dateisystem.Dateisystem;
 import de.schulung.java.dateisystem.DateisystemEintrag;
 import de.schulung.java.dateisystem.Ordner;
+import de.schulung.java.dateisystem.Verknüpfung;
 
 public class Dateisystemanwendung {
 
@@ -44,6 +45,16 @@ public class Dateisystemanwendung {
     urlaub.hinzufügen(berge);
     programme.hinzufügen(editor);
 
+    // Verknüpfungen (Größe immer 1)
+
+    Verknüpfung zumUrlaub = new Verknüpfung("Urlaubsbilder", urlaub);
+    Verknüpfung zumEditor = new Verknüpfung("Editor", editor);
+    Verknüpfung zurWurzel = new Verknüpfung("Start", wurzel);
+
+    anna.hinzufügen(zumUrlaub);
+    anna.hinzufügen(zumEditor);
+    urlaub.hinzufügen(zurWurzel); // kein Zyklus: die Verknüpfung enthält das Ziel nicht
+
     ausgeben(wurzel, "");
 
     // Zyklen werden verhindert
@@ -65,7 +76,12 @@ public class Dateisystemanwendung {
 
   // gibt den Ordner mit allen Unterelementen als Baum aus
   private static void ausgeben(DateisystemEintrag eintrag, String einrückung) {
-    System.out.println(einrückung + eintrag.getName() + " (" + eintrag.getGröße() + " Bytes)");
+    String zeile = einrückung + eintrag.getName() + " (" + eintrag.getGröße() + " Bytes)";
+    if (eintrag instanceof Verknüpfung) {
+      Verknüpfung verknüpfung = (Verknüpfung) eintrag;
+      zeile += " -> " + verknüpfung.getZiel().getName();
+    }
+    System.out.println(zeile);
     if (eintrag instanceof Ordner) {
       Ordner ordner = (Ordner) eintrag;
       for (DateisystemEintrag unterelement : ordner.getEinträge()) {

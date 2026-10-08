@@ -2,7 +2,7 @@ package de.schulung.java.dateisystem;
 
 import java.util.Arrays;
 
-public class Ordner extends DateisystemEintrag {
+public class Ordner extends VerknüpfbarerEintrag {
 
   private DateisystemEintrag[] einträge = new DateisystemEintrag[0];
 
