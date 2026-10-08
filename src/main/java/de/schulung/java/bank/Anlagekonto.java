@@ -8,4 +8,9 @@ public abstract class Anlagekonto extends Konto {
   }
 
   public abstract double getZinssatz(); // in Prozent p. a.
+
+  @Override
+  protected boolean isAuszahlenErlaubt(long betrag) {
+    return getStand() - betrag >= 0;
+  }
 }

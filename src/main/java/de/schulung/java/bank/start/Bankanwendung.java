@@ -90,6 +90,13 @@ public class Bankanwendung {
     konto1.auszahlen(500000000);
     // konto1.setStand(konto1.getStand() - 500000000);
 
+    // Mindeststand
+
+    System.out.println(konto1.auszahlen(200000)); // Girokonto: -46.000 ct, innerhalb des Dispos
+    System.out.println(konto1.auszahlen(100000)); // Girokonto: Fehler, Dispo überschritten
+    System.out.println(konto2.auszahlen(30000));  // Sparkonto: Fehler, kein Minus erlaubt
+    System.out.println(konto5.auszahlen(2000000)); // Festgeldkonto: 0 ct, genau auf 0
+
     // Vergleich
 
     Kunde kunde1Kopie = new Kunde();
