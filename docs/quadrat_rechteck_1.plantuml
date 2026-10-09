@@ -1,0 +1,41 @@
+@startuml
+
+title Lösung 1: Quadrat erbt von Rechteck
+
+class Rechteck {
+    -a: double
+    -b: double
+    --
+    +setA(a: double)
+    +setB(b: double)
+    +getFläche(): double
+}
+
+class Quadrat {
+    {a == b}
+    --
+    +setA(a: double)
+    +setB(b: double)
+}
+
+Rechteck <|-- Quadrat
+
+note right of Rechteck::getFläche
+  a * b
+end note
+
+note right of Quadrat
+  setA() und setB() setzen
+  jeweils beide Seitenlängen
+end note
+
+note as Bewertung
+  <b>Bewertung</b>
+  + Semantik korrekt:
+    „Ein Quadrat ist ein spezielles Rechteck.“
+  – Schnittstelle schlecht: Ein Quadrat hat a und b.
+    Wer a setzt, setzt auch b – überraschend für
+    jeden, der das Quadrat als Rechteck verwendet.
+end note
+
+@enduml
