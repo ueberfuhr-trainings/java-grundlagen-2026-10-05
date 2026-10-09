@@ -13,6 +13,8 @@ import de.schulung.java.bibliothek.PhysischesExemplar;
 import de.schulung.java.bibliothek.Zeitschrift;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Bibliotheksanwendung {
 
@@ -43,9 +45,9 @@ public class Bibliotheksanwendung {
     Exemplar exemplar2 = bibliothek.erstelleExemplar(buch1);
     Exemplar exemplar3 = bibliothek.erstelleExemplar(buch2);
     Exemplar exemplar4 = bibliothek.erstelleExemplar(buch2);
-    Exemplar[] kotlinExemplare = new Exemplar[11];
-    for (int i = 0; i < kotlinExemplare.length; i++) {
-      kotlinExemplare[i] = bibliothek.erstelleExemplar(buch3);
+    List<Exemplar> kotlinExemplare = new ArrayList<>();
+    for (int i = 0; i < 11; i++) {
+      kotlinExemplare.add(bibliothek.erstelleExemplar(buch3));
     }
     bibliothek.erstelleExemplar(zeitschrift);
     Exemplar hörbuchLizenz1 = bibliothek.erstelleExemplar(hörbuch); // virtuell: kein Regal
@@ -90,18 +92,18 @@ public class Bibliotheksanwendung {
     }
 
     System.out.println("Verfügbare Exemplare von „" + buch1.getTitel() + "“: "
-      + bibliothek.findeVerfügbareExemplare(buch1).length);
+      + bibliothek.findeVerfügbareExemplare(buch1).size());
     System.out.println("Verfügbare Exemplare von „" + buch2.getTitel() + "“: "
-      + bibliothek.findeVerfügbareExemplare(buch2).length);
+      + bibliothek.findeVerfügbareExemplare(buch2).size());
     System.out.println("Verfügbare Exemplare von „" + buch3.getTitel() + "“: "
-      + bibliothek.findeVerfügbareExemplare(buch3).length);
+      + bibliothek.findeVerfügbareExemplare(buch3).size());
 
     // Hörbücher: zwei Lizenzen, also zwei gleichzeitige Ausleihen
 
     Ausleihe hörbuchAusleihe1 = bibliothek.ausleihen(hörbuchLizenz1, ausweis2);
     Ausleihe hörbuchAusleihe2 = bibliothek.ausleihen(hörbuchLizenz2, ausweis2);
     System.out.println("Verfügbare Exemplare von „" + hörbuch.getTitel() + "“: "
-      + bibliothek.findeVerfügbareExemplare(hörbuch).length);
+      + bibliothek.findeVerfügbareExemplare(hörbuch).size());
     byte[] datei = bibliothek.herunterladen(hörbuchAusleihe1);
     System.out.println("„" + hörbuch.getTitel() + "“ heruntergeladen: " + datei.length + " Bytes");
     bibliothek.herunterladen(ausleihe1); // Fehler: kein Hörbuch
@@ -122,7 +124,7 @@ public class Bibliotheksanwendung {
     System.out.println("=== 20 Tage später: " + bibliothek.getAktuellesDatum());
 
     System.out.println("Überfällige Ausleihen von " + leser1.getName() + ": "
-      + bibliothek.findeÜberfälligeAusleihen(ausweis1).length);
+      + bibliothek.findeÜberfälligeAusleihen(ausweis1).size());
     bibliothek.ausleihen(exemplar4, ausweis1); // Fehler: überfällige Ausleihen
     bibliothek.verlängern(ausleihe1, 7);       // Fehler: ausleihe2 ist ebenfalls überfällig
 

@@ -1,25 +1,27 @@
 package de.schulung.java.dateisystem;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeSet;
 
 public class Ordner extends VerknüpfbarerEintrag {
 
-  private DateisystemEintrag[] einträge = new DateisystemEintrag[0];
+  private final Collection<DateisystemEintrag> einträge = new TreeSet<>();
 
   public Ordner(String name) {
     super(name);
   }
 
   public int getAnzahlEinträge() {
-    return einträge.length;
+    return einträge.size();
   }
 
   /**
    * Liefert eine Kopie, damit Einträge nur über hinzufügen() und entfernen()
    * geändert werden können (sonst ließe sich die Zyklusprüfung umgehen).
    */
-  public DateisystemEintrag[] getEinträge() {
-    return Arrays.copyOf(einträge, einträge.length);
+  public List<DateisystemEintrag> getEinträge() {
+    return List.copyOf(einträge);
   }
 
   /**
@@ -37,10 +39,12 @@ public class Ordner extends VerknüpfbarerEintrag {
         return false;
       }
     }
-    einträge = Arrays.copyOf(einträge, einträge.length + 1);
-    einträge[einträge.length - 1] = eintrag;
-    eintrag.setParent(this);
-    return true;
+    if (einträge.add(eintrag)) {
+      eintrag.setParent(this);
+      return true;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -49,14 +53,9 @@ public class Ordner extends VerknüpfbarerEintrag {
    * @return false, wenn der Eintrag nicht direkt in diesem Ordner liegt
    */
   public boolean entfernen(DateisystemEintrag eintrag) {
-    for (int i = 0; i < einträge.length; i++) {
-      if (einträge[i] == eintrag) {
-        // letzten Eintrag an die frei gewordene Stelle setzen und Array verkürzen
-        einträge[i] = einträge[einträge.length - 1];
-        einträge = Arrays.copyOf(einträge, einträge.length - 1);
-        eintrag.setParent(null);
-        return true;
-      }
+    if (einträge.remove(eintrag)) {
+      eintrag.setParent(null);
+      return true;
     }
     return false;
   }

@@ -1,7 +1,9 @@
 package de.schulung.java.bibliothek;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -78,17 +80,17 @@ public class Bibliothek {
   public static final int AUSWEIS_VERLÄNGERUNG_FRÜHESTENS_TAGE_VORHER = 7;
 
   private LocalDate aktuellesDatum = LocalDate.now();
-  private final Regal[] regale = new Regal[10];
-  private Exemplar[] exemplare = new Exemplar[0];
-  private Ausweis[] ausweise = new Ausweis[0];
-  private Ausleihe[] ausleihen = new Ausleihe[0];
+  private final List<Regal> regale = new ArrayList<>();
+  private final List<Exemplar> exemplare = new ArrayList<>();
+  private final List<Ausweis> ausweise = new ArrayList<>();
+  private final List<Ausleihe> ausleihen = new ArrayList<>();
 
   public Bibliothek() {
     // 10 Regale: A1, A2, B1, B2, ..., E1, E2
-    for (int i = 0; i < regale.length; i++) {
+    for (int i = 0; i < 10; i++) {
       char buchstabe = (char) ('A' + i / 2);
       int ziffer = i % 2 + 1;
-      regale[i] = new Regal("" + buchstabe + ziffer);
+      regale.add(new Regal("" + buchstabe + ziffer));
     }
   }
 
@@ -100,20 +102,21 @@ public class Bibliothek {
     this.aktuellesDatum = aktuellesDatum;
   }
 
-  public Regal[] getRegale() {
-    return regale;
+  // nicht veränderbar: Regale, Exemplare, Ausweise und Ausleihen werden nur über die Bibliothek angelegt
+  public List<Regal> getRegale() {
+    return Collections.unmodifiableList(regale);
   }
 
-  public Exemplar[] getExemplare() {
-    return exemplare;
+  public List<Exemplar> getExemplare() {
+    return Collections.unmodifiableList(exemplare);
   }
 
-  public Ausweis[] getAusweise() {
-    return ausweise;
+  public List<Ausweis> getAusweise() {
+    return Collections.unmodifiableList(ausweise);
   }
 
-  public Ausleihe[] getAusleihen() {
-    return ausleihen;
+  public List<Ausleihe> getAusleihen() {
+    return Collections.unmodifiableList(ausleihen);
   }
 
   // Exemplare
@@ -123,7 +126,7 @@ public class Bibliothek {
     if (medium instanceof Printmedium printmedium) {
       PhysischesExemplar physischesExemplar = new PhysischesExemplar(UUID.randomUUID(), printmedium);
       // Regale der Reihe nach befüllen
-      physischesExemplar.setRegal(regale[zählePhysischeExemplare() % regale.length]);
+      physischesExemplar.setRegal(regale.get(zählePhysischeExemplare() % regale.size()));
       exemplar = physischesExemplar;
     } else if (medium instanceof Hörbuch hörbuch) {
       exemplar = new VirtuellesExemplar(UUID.randomUUID(), hörbuch);
@@ -132,21 +135,18 @@ public class Bibliothek {
       return null;
     }
 
-    exemplare = Arrays.copyOf(exemplare, exemplare.length + 1);
-    exemplare[exemplare.length - 1] = exemplar;
+    exemplare.add(exemplar);
     return exemplar;
   }
 
-  public Exemplar[] findeVerfügbareExemplare(Medium medium) {
-    Exemplar[] gefundeneExemplare = new Exemplar[exemplare.length];
-    int gefunden = 0;
+  public List<Exemplar> findeVerfügbareExemplare(Medium medium) {
+    List<Exemplar> gefundeneExemplare = new ArrayList<>();
     for (Exemplar exemplar : exemplare) {
       if (exemplar.getMedium().equals(medium) && findeOffeneAusleihe(exemplar) == null) {
-        gefundeneExemplare[gefunden] = exemplar;
-        gefunden++;
+        gefundeneExemplare.add(exemplar);
       }
     }
-    return Arrays.copyOf(gefundeneExemplare, gefunden);
+    return gefundeneExemplare;
   }
 
   // Ausweise
@@ -167,8 +167,7 @@ public class Bibliothek {
     }
 
     Ausweis ausweis = new Ausweis(UUID.randomUUID(), leser, aktuellesDatum.plusYears(AUSWEIS_GÜLTIGKEIT_JAHRE));
-    ausweise = Arrays.copyOf(ausweise, ausweise.length + 1);
-    ausweise[ausweise.length - 1] = ausweis;
+    ausweise.add(ausweis);
     return ausweis;
   }
 
@@ -199,16 +198,14 @@ public class Bibliothek {
     return null; // Exemplar ist verfügbar
   }
 
-  public Ausleihe[] findeÜberfälligeAusleihen(Ausweis ausweis) {
-    Ausleihe[] gefundeneAusleihen = new Ausleihe[ausleihen.length];
-    int gefunden = 0;
+  public List<Ausleihe> findeÜberfälligeAusleihen(Ausweis ausweis) {
+    List<Ausleihe> gefundeneAusleihen = new ArrayList<>();
     for (Ausleihe ausleihe : ausleihen) {
       if (ausleihe.getAusweis().equals(ausweis) && istÜberfällig(ausleihe)) {
-        gefundeneAusleihen[gefunden] = ausleihe;
-        gefunden++;
+        gefundeneAusleihen.add(ausleihe);
       }
     }
-    return Arrays.copyOf(gefundeneAusleihen, gefunden);
+    return gefundeneAusleihen;
   }
 
   public Ausleihe ausleihen(Exemplar exemplar, Ausweis ausweis) {
@@ -219,7 +216,7 @@ public class Bibliothek {
     if (!istDauerZulässig(dauer)) {
       return null;
     }
-    if (findeÜberfälligeAusleihen(ausweis).length > 0) {
+    if (!findeÜberfälligeAusleihen(ausweis).isEmpty()) {
       System.out.println("Fehler: Der Leser hat überfällige Ausleihen.");
       return null;
     }
@@ -240,8 +237,7 @@ public class Bibliothek {
     Ausleihe ausleihe = new Ausleihe(ausweis, exemplar);
     ausleihe.anhängen(new Ausleihperiode(aktuellesDatum, beginntAm, endetAm));
 
-    ausleihen = Arrays.copyOf(ausleihen, ausleihen.length + 1);
-    ausleihen[ausleihen.length - 1] = ausleihe;
+    ausleihen.add(ausleihe);
     return ausleihe;
   }
 

@@ -2,7 +2,8 @@ package de.schulung.java.dateisystem;
 
 import java.nio.file.Path;
 
-public abstract class DateisystemEintrag {
+public abstract class DateisystemEintrag
+  implements Comparable<DateisystemEintrag> {
 
   private String name;
   private Ordner parent;
@@ -41,4 +42,12 @@ public abstract class DateisystemEintrag {
 
   public abstract long getGröße();
 
+  @Override
+  public int compareTo(DateisystemEintrag other) {
+    if (this == other) {
+      return 0;
+    }
+    // TODO wenn gleiche Größe, dann nach Namen sortieren?
+    return other.getGröße() > this.getGröße() ? -1 : 1;
+  }
 }

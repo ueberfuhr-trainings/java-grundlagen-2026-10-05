@@ -1,64 +1,70 @@
 package de.schulung.java.bank;
 
 import java.math.BigInteger;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class Bank {
 
   public static final Bank INSTANCE = new Bank();
 
-  private Kunde[] kunden = new Kunde[0];
-  private Konto[] konten = new Konto[0];
+  private final Set<Kunde> kunden = new HashSet<>();
+  // Konten nach IBAN, damit die Suche nach IBAN ohne Schleife auskommt
+  private final Map<String, Konto> konten = new HashMap<>();
 
   private Bank() {
   }
 
-  public Kunde[] getKunden() {
-    return kunden;
+  // nicht veränderbar: Kunden und Konten werden nur über die Bank angelegt
+  public Set<Kunde> getKunden() {
+    return Collections.unmodifiableSet(kunden);
   }
 
-  public Konto[] getKonten() {
-    return konten;
+  public Collection<Konto> getKonten() {
+    return Collections.unmodifiableCollection(konten.values());
   }
 
   public void kundeAnlegen(Kunde kunde) {
 
     // Prüfen, ob de.schulung.java.bank.Kunde bereits vorhanden ist
-    for (Kunde existing : kunden) {
-      if (existing == kunde) {
-        System.out.println("Fehler: de.schulung.java.bank.Kunde ist bereits vorhanden.");
-        return;
-      }
+    if (kunden.contains(kunde)) {
+      System.out.println("Fehler: de.schulung.java.bank.Kunde ist bereits vorhanden.");
+      return;
     }
 
-    // Kundennummer generieren
-    kunde.setNummer(UUID.randomUUID());
-    // TODO: existiert UUID schon im Array?
+    // Kundennummer generieren – vor dem Hinzufügen, weil der Hashcode von der Nummer abhängt;
+    // contains() vergleicht über die Nummer, also neu würfeln, solange sie schon vergeben ist
+    do {
+      kunde.setNummer(UUID.randomUUID());
+    } while (kunden.contains(kunde));
 
-    // de.schulung.java.bank.Kunde an Array anhängen
-    kunden = Arrays.copyOf(kunden, kunden.length + 1);
-    kunden[kunden.length - 1] = kunde;
+    kunden.add(kunde);
 
   }
 
   public void kontoAnlegen(Konto konto) {
 
     // Prüfen, ob de.schulung.java.bank.Konto bereits vorhanden ist
-    for (Konto existing : konten) {
-      if (existing == konto) {
-        System.out.println("Fehler: de.schulung.java.bank.Konto ist bereits vorhanden.");
-        return;
-      }
+    if (konten.containsValue(konto)) {
+      System.out.println("Fehler: de.schulung.java.bank.Konto ist bereits vorhanden.");
+      return;
     }
 
-    // Kontonummer generieren
-    konto.setIban(randomIban());
-    // TODO: existiert IBAN schon im Array?
+    // Kontonummer generieren, solange sie schon vergeben ist
+    String iban;
+    do {
+      iban = randomIban();
+    } while (konten.containsKey(iban));
+    konto.setIban(iban);
 
-    // de.schulung.java.bank.Konto an Array anhängen
-    konten = Arrays.copyOf(konten, konten.length + 1);
-    konten[konten.length - 1] = konto;
+    konten.put(konto.getIban(), konto);
 
   }
 
@@ -74,24 +80,17 @@ public class Bank {
   }
 
   public Konto findeKontoNachIban(String iban) {
-    for (Konto konto : konten) {
-      if (konto.getIban().equals(iban)) {
-        return konto;
-      }
-    }
-    return null; // de.schulung.java.bank.Konto nicht gefunden
+    return konten.get(iban); // null, wenn das Konto nicht gefunden wurde
   }
 
-  public Konto[] findeKontenNachKunde(Kunde kunde) {
-    Konto[] gefundeneKonten = new Konto[konten.length];
-    int gefunden = 0;
-    for (Konto konto : konten) {
+  public List<Konto> findeKontenNachKunde(Kunde kunde) {
+    List<Konto> gefundeneKonten = new ArrayList<>();
+    for (Konto konto : konten.values()) {
       if (konto.getInhaber().getNummer().equals(kunde.getNummer())) {
-        gefundeneKonten[gefunden] = konto;
-        gefunden++;
+        gefundeneKonten.add(konto);
       }
     }
-    return Arrays.copyOf(gefundeneKonten, gefunden);
+    return gefundeneKonten;
   }
 
 }
