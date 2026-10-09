@@ -1,0 +1,40 @@
+@startuml
+
+title Lösung 3: Quadrat delegiert an Rechteck
+
+class Rechteck {
+    -a: double
+    -b: double
+    --
+    +setA(a: double)
+    +setB(b: double)
+    +getFläche(): double
+}
+
+class Quadrat {
+    --
+    +setA(a: double)
+    +getFläche(): double
+}
+
+Quadrat *--> "1" Rechteck : delegate
+
+note right of Rechteck::getFläche
+  a * b
+end note
+
+note right of Quadrat
+  setA() und getFläche() leiten
+  an das Rechteck weiter;
+  setA() setzt dort a und b
+end note
+
+note as Bewertung
+  <b>Bewertung</b>
+  + Schnittstelle gut: Das Quadrat hat nach außen nur a.
+  – Semantik schwierig: Ein Quadrat ist kein Rechteck
+    mehr, sondern hat intern eines. Wo ein Rechteck
+    erwartet wird, kann kein Quadrat übergeben werden.
+end note
+
+@enduml

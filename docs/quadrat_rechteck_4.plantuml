@@ -1,0 +1,32 @@
+@startuml
+
+title Lösung 4: nur eine Klasse Rechteck
+
+class Rechteck {
+    -a: double
+    -b: double
+    --
+    +setA(a: double)
+    +setB(b: double)
+    +getFläche(): double
+    +isQuadrat(): boolean
+}
+
+note right of Rechteck::getFläche
+  a * b
+end note
+
+note right of Rechteck::isQuadrat
+  a == b
+end note
+
+note as Bewertung
+  <b>Bewertung</b>
+  + Semantik korrekt: Ein Quadrat ist ein Rechteck,
+    dessen Seitenlängen gleich sind.
+  + Einfach: keine Vererbung, keine Weiterleitung.
+  – Quadrat ist kein eigener Typ: Methoden können
+    nicht verlangen, dass sie ein Quadrat bekommen.
+end note
+
+@enduml
