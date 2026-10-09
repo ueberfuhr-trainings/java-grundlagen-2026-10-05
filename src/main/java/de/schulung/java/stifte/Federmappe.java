@@ -1,14 +1,14 @@
 package de.schulung.java.stifte;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Federmappe {
 
-  private Stift[] stifte = new Stift[0];
+  private final List<Stift> stifte = new ArrayList<>();
 
   public void addStift(Stift stift) {
-    this.stifte = Arrays.copyOf(this.stifte, this.stifte.length + 1);
-    this.stifte[this.stifte.length - 1] = stift;
+    this.stifte.add(stift);
   }
 
   public void alleSchreiben() {

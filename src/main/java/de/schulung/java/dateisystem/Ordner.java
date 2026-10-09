@@ -1,6 +1,7 @@
 package de.schulung.java.dateisystem;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeSet;
 
 public class Ordner extends VerknüpfbarerEintrag {
@@ -19,8 +20,8 @@ public class Ordner extends VerknüpfbarerEintrag {
    * Liefert eine Kopie, damit Einträge nur über hinzufügen() und entfernen()
    * geändert werden können (sonst ließe sich die Zyklusprüfung umgehen).
    */
-  public DateisystemEintrag[] getEinträge() {
-    return einträge.toArray(new DateisystemEintrag[0]);
+  public List<DateisystemEintrag> getEinträge() {
+    return List.copyOf(einträge);
   }
 
   /**

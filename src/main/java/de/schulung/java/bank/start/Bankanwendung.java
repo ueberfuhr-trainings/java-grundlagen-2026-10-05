@@ -8,8 +8,6 @@ import de.schulung.java.bank.Konto;
 import de.schulung.java.bank.Kunde;
 import de.schulung.java.bank.Sparkonto;
 
-import java.util.Arrays;
-
 public class Bankanwendung {
 
   public static void main(String[] args) {
@@ -126,9 +124,9 @@ public class Bankanwendung {
     }
 
     System.out.println("Konten von de.schulung.java.bank.Kunde 1:");
-    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde1)));
+    System.out.println(bank.findeKontenNachKunde(kunde1));
     System.out.println("Konten von de.schulung.java.bank.Kunde 2:");
-    System.out.println(Arrays.toString(bank.findeKontenNachKunde(kunde2)));
+    System.out.println(bank.findeKontenNachKunde(kunde2));
 
   }
 

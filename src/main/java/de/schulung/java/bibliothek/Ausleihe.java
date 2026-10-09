@@ -1,14 +1,16 @@
 package de.schulung.java.bibliothek;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Ausleihe {
 
   private final Ausweis ausweis;
   private final Exemplar exemplar;
   private LocalDate rückgabeErfolgtAm;
-  private Ausleihperiode[] ausleihperioden = new Ausleihperiode[0];
+  private final List<Ausleihperiode> ausleihperioden = new ArrayList<>();
 
   public Ausleihe(Ausweis ausweis, Exemplar exemplar) {
     this.ausweis = ausweis;
@@ -32,21 +34,21 @@ public class Ausleihe {
     this.rückgabeErfolgtAm = rückgabeErfolgtAm;
   }
 
-  public Ausleihperiode[] getAusleihperioden() {
-    return ausleihperioden;
+  // nicht veränderbar: Ausleihperioden werden nur über anhängen() hinzugefügt
+  public List<Ausleihperiode> getAusleihperioden() {
+    return Collections.unmodifiableList(ausleihperioden);
   }
 
   public Ausleihperiode getLetzteAusleihperiode() {
-    if (ausleihperioden.length == 0) {
+    if (ausleihperioden.isEmpty()) {
       return null;
     }
-    return ausleihperioden[ausleihperioden.length - 1];
+    return ausleihperioden.getLast();
   }
 
   // nicht public: Ausleihperioden werden nur von der Bibliothek angehängt
   void anhängen(Ausleihperiode ausleihperiode) {
-    ausleihperioden = Arrays.copyOf(ausleihperioden, ausleihperioden.length + 1);
-    ausleihperioden[ausleihperioden.length - 1] = ausleihperiode;
+    ausleihperioden.add(ausleihperiode);
   }
 
   public boolean isOffen() {
